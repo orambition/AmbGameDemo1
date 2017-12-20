@@ -1,111 +1,82 @@
 package Core.Game;
+/*渲染类
+* 用于渲染画面*/
 
 import Core.Engine.Utils;
 import Core.Engine.Window;
+import Core.Engine.graph.Mesh;
 import Core.Engine.graph.ShaderProgram;
-import org.lwjgl.system.MemoryUtil;
-
-import java.nio.FloatBuffer;
+import org.joml.Matrix4f;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glDisableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
-import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
-import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL30.glBindVertexArray;
 
 public class Renderer {
-    /*Vertex Array Objects
-    * 一个数组是一个对象，可以包含多个vbo
-    * 每个vbo相当于一个属性
-    * 如坐标、纹理、颜色、等*/
-    private int vaoId;
+    //弧度视野
+    //Field of view（FOV）
+    private static final float FOV = (float) Math.toRadians(60.0f);
+    //近平面距离
+    private static final float Z_NEAR = 0.01f;
+    //远平面距离
+    private static final float Z_FAR = 1000.f;
+    //投影矩阵
+    private Matrix4f projectionMatrix;
 
-    /*Vertex Buffer Object
-    * 可以包含坐标、纹理、颜色、等信息*/
-    private int vboId;
+    //着色器程序
     private ShaderProgram shaderProgram;
 
     public Renderer(){
 
     }
 
-    public void init() throws Exception{
+    public void init(Window window) throws Exception{
+        //创建着色器
         shaderProgram = new ShaderProgram();
         shaderProgram.createVertexShader(Utils.loadResource("/vertex.vs"));
         shaderProgram.createFragmentShader(Utils.loadResource("/fragment.fs"));
         shaderProgram.link();
-        //要绘制的三角形顶点坐标，在右手三维坐标系中XYZ
-        float[] vertices = new float[]{
-                0.0f,0.5f,0.0f,
-                -0.5f,-0.5f,0.0f,
-                0.5f,-0.5f,0.0f
-        };
-        //创建缓冲区为了使用OpenGL库
-        FloatBuffer verticesBuffer = null;
-        try {
-            //使用MemoryUtil在非堆内存创建缓冲区，因为java存储在堆内存的数据不能通过本地OpenGl代码访问
-            verticesBuffer = MemoryUtil.memAllocFloat(vertices.length);
-            verticesBuffer.put(vertices).flip();
-            //创建vao,并绑定
-            vaoId = glGenVertexArrays();
-            glBindVertexArray(vaoId);
-            //创建vbo,并绑定
-            vboId = glGenBuffers();
-            glBindBuffer(GL_ARRAY_BUFFER,vboId);
-            glBufferData(GL_ARRAY_BUFFER,verticesBuffer,GL_STATIC_DRAW);
-            /*定义数据结构和存储在其中的VAO属性列表
-            * 索引：指定着色器期望此数据的位置。
-            * 大小：指定每个顶点属性的组件数（从1到4）。
-            * 在这种情况下，我们传递的是三维坐标，所以应该是3。
-            * 类型：指定数组中每个组件的类型，在这种情况下是浮点。
-            * 规范化：指定值是否应该规范化。
-            * 步幅：指定连续的通用顶点属性之间的字节偏移量。
-            * 偏移量：指定缓冲区中第一个组件的偏移量。*/
-            glVertexAttribPointer(0,3,GL_FLOAT,false,0,0);
-            //完成后解绑vbo和vao
-            glBindBuffer(GL_ARRAY_BUFFER,0);
-            glBindVertexArray(0);
-        }finally {
-            //手动释放申请的内存
-            if (verticesBuffer!=null)
-                MemoryUtil.memFree(verticesBuffer);
-        }
-        //完成以上步骤，数据就已经在显存中了
+
+        //创建投影矩阵
+        float aspectRatio = (float) window.getWindowWidth() / window.getWindowHeight();//宽高比
+        projectionMatrix = new Matrix4f().perspective(FOV, aspectRatio, Z_NEAR, Z_FAR);
+        shaderProgram.createUniform("projectionMatrix");
     }
+
     //清屏函数
     public void clear(){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);//清屏
     }
+
     //渲染函数
-    public void render(Window window) {
+    public void render(Window window, Mesh mesh) {
         clear();
         if (window.isResized()) {
             glViewport(0, 0, window.getWindowWidth(), window.getWindowHeight());
             window.setResized(false);
         }
         shaderProgram.bind();
+        shaderProgram.setUniform("projectionMatrix",projectionMatrix);
         // Bind to the VAO
-        glBindVertexArray(vaoId);
-        glEnableVertexAttribArray(0);
-        // Draw the vertices
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindVertexArray(mesh.getVaoId());
+        glEnableVertexAttribArray(0);//启用数组1，对用位置
+        glEnableVertexAttribArray(1);//启用数组2，对用颜色
+        /*绘制图形，参数：
+        * 模式：指定渲染的原语，在此情况下的三角形。
+        * 计数：指定要呈现的元素的数目。
+        * 类型：指定索引数据中的值类型。
+        * 索引：指定应用于索引数据以开始呈现的偏移量。*/
+        glDrawElements(GL_TRIANGLES,mesh.getVertexCount(),GL_UNSIGNED_INT,0);
         // Restore state
-        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(0);//关闭数组1
+        glDisableVertexAttribArray(1);//关闭数组2
         glBindVertexArray(0);
         shaderProgram.unbind();
     }
     //
-    public void clearup(){
+    public void clearUp(){
         if (shaderProgram != null)
-            shaderProgram.cleanup();
-
-        glDisableVertexAttribArray(0);
-        // Delete the VBO
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDeleteBuffers(vboId);
-        // Delete the VAO
-        glBindVertexArray(0);
-        glDeleteVertexArrays(vaoId);
+            shaderProgram.cleanUp();
     }
 }

@@ -1,4 +1,13 @@
 package Core.Engine.graph;
+/*着色器
+* 用于从源文件创建着色器*/
+
+import org.joml.Matrix4f;
+import org.lwjgl.system.MemoryStack;
+
+import java.nio.FloatBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.lwjgl.opengl.GL20.*;
 /*1.Create a OpenGL Program
@@ -9,15 +18,34 @@ import static org.lwjgl.opengl.GL20.*;
 * 6. Link the program.*/
 
 public class ShaderProgram {
+
     private final int programId;
     private int vertexShaderId;
     private int fragmentShaderId;
+    private final Map<String, Integer> uniforms;
     //新建GL程序
     public ShaderProgram() throws Exception{
         programId = glCreateProgram();
         if (programId == 0)
             throw new Exception("Could not create Shader");
+        uniforms = new HashMap<>();
     }
+    public void createUniform(String uniformName) throws Exception {
+        int uniformLocation = glGetUniformLocation(programId, uniformName);
+        if (uniformLocation < 0) {
+            throw new Exception("Could not find uniform:" + uniformName);
+        }
+        uniforms.put(uniformName, uniformLocation);
+    }
+    public void setUniform(String uniformName, Matrix4f value) {
+        // Dump the matrix into a float buffer
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            FloatBuffer fb = stack.mallocFloat(16);
+            value.get(fb);
+            glUniformMatrix4fv(uniforms.get(uniformName), false, fb);
+        }
+    }
+
     //创建点着色器
     public void createVertexShader(String shaderCode)throws Exception{
         vertexShaderId = createShader(shaderCode,GL_VERTEX_SHADER);
@@ -65,7 +93,7 @@ public class ShaderProgram {
         glUseProgram(0);
     }
     //清理？
-    public void cleanup(){
+    public void cleanUp(){
         unbind();
         if (programId != 0)
             glDeleteProgram(programId);

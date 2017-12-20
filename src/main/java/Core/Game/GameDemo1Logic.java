@@ -2,6 +2,7 @@ package Core.Game;
 
 import Core.Engine.IGameLogic;
 import Core.Engine.Window;
+import Core.Engine.graph.Mesh;
 
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_DOWN;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_UP;
@@ -9,6 +10,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_KEY_UP;
 public class GameDemo1Logic implements IGameLogic {
 
     private final Renderer renderer;
+    private Mesh mesh;
 
     private int direction = 0;
     private float color = 0.0f;
@@ -18,8 +20,25 @@ public class GameDemo1Logic implements IGameLogic {
     }
 
     @Override
-    public void init() throws Exception {
-        renderer.init();
+    public void init(Window window) throws Exception {
+        //初始化渲染
+        renderer.init(window);
+        float[] positions = new float[]{
+                -0.5f, 0.5f, 0.0f,
+                -0.5f, -0.5f, 0.0f,
+                0.5f, -0.5f, 0.0f,
+                0.5f, 0.5f, 0.0f,
+        };
+        float[] colours = new float[]{
+                0.5f, 0.0f, 0.0f,
+                0.0f, 0.5f, 0.0f,
+                0.0f, 0.0f, 0.5f,
+                0.0f, 0.5f, 0.5f,
+        };
+        int[] indices = new int[]{
+                0, 1, 2, 1, 2, 3,
+        };
+        mesh = new Mesh(positions, colours, indices);
     }
 
     @Override
@@ -46,11 +65,12 @@ public class GameDemo1Logic implements IGameLogic {
     @Override
     public void render(Window window) {
         window.setClearColor(color,color,color,0);
-        renderer.render(window);
+        renderer.render(window,mesh);
     }
 
     @Override
     public void cleanup() {
-        renderer.clearup();
+        renderer.clearUp();
+        mesh.cleanUp();
     }
 }

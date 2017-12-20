@@ -53,7 +53,7 @@ public class Window {
             this.windowWidth = width;
             this.windowHeight = height;
             this.resized = true;
-            System.out.println("窗口大小改变");
+            //System.out.println("窗口大小改变");
         });
 
         // Setup a key callback. It will be called every time a key is pressed, repeated or released.

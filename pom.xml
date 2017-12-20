@@ -22,9 +22,17 @@
 
     <properties>
         <lwjgl.version>3.1.5</lwjgl.version>
+        <joml.version>1.7.1</joml.version>
     </properties>
 
     <dependencies>
+        <!--Java图形数学库，用于计算三维坐标到二维的投影-->
+        <dependency>
+            <groupId>org.joml</groupId>
+            <artifactId>joml</artifactId>
+            <version>${joml.version}</version>
+        </dependency>
+        <!---->
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl</artifactId>
