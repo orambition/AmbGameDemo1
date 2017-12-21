@@ -4,16 +4,14 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-/*网格类？
-* 用于将数组传入显存*/
+
 import static org.lwjgl.opengl.ARBVertexArrayObject.glBindVertexArray;
 import static org.lwjgl.opengl.ARBVertexArrayObject.glDeleteVertexArrays;
-import static org.lwjgl.opengl.GL11.GL_FLOAT;
+import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.glDisableVertexAttribArray;
-import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
+import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
-
+/*需要渲染的数据*/
 public class Mesh {
     /*Vertex Array Objects
      * 一个数组是一个对象，可以包含多个vbo
@@ -91,6 +89,23 @@ public class Mesh {
 
     public int getVertexCount() {
         return vertexCount;
+    }
+
+    public void render(){
+        // Bind to the VAO
+        glBindVertexArray(getVaoId());
+        glEnableVertexAttribArray(0);//启用数组1，对用位置
+        glEnableVertexAttribArray(1);//启用数组2，对用颜色
+        /*绘制图形，参数：
+         * 模式：指定渲染的原语，在此情况下的三角形。
+         * 计数：指定要呈现的元素的数目。
+         * 类型：指定索引数据中的值类型。
+         * 索引：指定应用于索引数据以开始呈现的偏移量。*/
+        glDrawElements(GL_TRIANGLES,getVertexCount(),GL_UNSIGNED_INT,0);
+        // Restore state
+        glDisableVertexAttribArray(0);//关闭数组1
+        glDisableVertexAttribArray(1);//关闭数组2
+        glBindVertexArray(0);
     }
 
     public void cleanUp() {

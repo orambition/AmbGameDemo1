@@ -1,6 +1,7 @@
 package Core.Engine.graph;
 /*着色器
-* 用于从源文件创建着色器*/
+* 用于从源文件创建着色器
+* 渲染的方式*/
 
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryStack;
@@ -18,11 +19,15 @@ import static org.lwjgl.opengl.GL20.*;
 * 6. Link the program.*/
 
 public class ShaderProgram {
-
+    //句柄
     private final int programId;
+    //点着色器
     private int vertexShaderId;
+    //线段着色器
     private int fragmentShaderId;
+    //uniform的句柄，存位置
     private final Map<String, Integer> uniforms;
+
     //新建GL程序
     public ShaderProgram() throws Exception{
         programId = glCreateProgram();
@@ -30,13 +35,15 @@ public class ShaderProgram {
             throw new Exception("Could not create Shader");
         uniforms = new HashMap<>();
     }
+    //创建Uniform
     public void createUniform(String uniformName) throws Exception {
+        //传入该着色器的句柄，获取vertex中的值？vertex.vs的main中没有使用该值则会报错
         int uniformLocation = glGetUniformLocation(programId, uniformName);
-        if (uniformLocation < 0) {
+        if (uniformLocation < 0)
             throw new Exception("Could not find uniform:" + uniformName);
-        }
         uniforms.put(uniformName, uniformLocation);
     }
+    //为Uniform设置值
     public void setUniform(String uniformName, Matrix4f value) {
         // Dump the matrix into a float buffer
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -60,7 +67,7 @@ public class ShaderProgram {
         int shaderId = glCreateShader(shaderType);
         if (shaderId == 0)
             throw new Exception("Error creating shader. Type: " + shaderType);
-        //读取源文件
+        //读取源文件eg. vertex.vs
         glShaderSource(shaderId,shaderCode);
         //编译着色器
         glCompileShader(shaderId);
