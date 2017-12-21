@@ -4,6 +4,7 @@ import Core.Engine.GameItem;
 import Core.Engine.IGameLogic;
 import Core.Engine.Window;
 import Core.Engine.graph.Mesh;
+import Core.Engine.graph.Texture;
 import org.joml.Vector3f;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -32,21 +33,49 @@ public class GameDemo1Logic implements IGameLogic {
         renderer.init(window);
         //创建Mesh
         float[] positions = new float[]{
-                -0.5f, 0.5f, 0.5f,
-                -0.5f, -0.5f, 0.5f,
-                0.5f, -0.5f, 0.5f,
-                0.5f, 0.5f, 0.5f,
+                // VO
+                -0.5f,  0.5f,  0.5f,
+                // V1
+                -0.5f, -0.5f,  0.5f,
+                // V2
+                0.5f, -0.5f,  0.5f,
+                // V3
+                0.5f,  0.5f,  0.5f,
+                // V4
+                -0.5f,  0.5f, -0.5f,
+                // V5
+                0.5f,  0.5f, -0.5f,
+                // V6
+                -0.5f, -0.5f, -0.5f,
+                // V7
+                0.5f, -0.5f, -0.5f,
         };
         float[] colours = new float[]{
                 0.5f, 0.0f, 0.0f,
                 0.0f, 0.5f, 0.0f,
                 0.0f, 0.0f, 0.5f,
                 0.0f, 0.5f, 0.5f,
+                0.5f, 0.0f, 0.0f,
+                0.0f, 0.5f, 0.0f,
+                0.0f, 0.0f, 0.5f,
+                0.0f, 0.5f, 0.5f,
         };
         int[] indices = new int[]{
-                0, 1, 2, 2, 0, 3,
+                // Front face
+                0, 1, 3, 3, 1, 2,
+                // Top Face
+                4, 0, 3, 5, 4, 3,
+                // Right face
+                3, 2, 7, 5, 3, 7,
+                // Left face
+                6, 1, 0, 6, 0, 4,
+                // Bottom face
+                2, 1, 6, 2, 6, 7,
+                // Back face
+                7, 6, 4, 7, 4, 5,
         };
-        Mesh mesh = new Mesh(positions, colours, indices);
+        Texture texture = new Texture("/textures/texture1.png");
+        Mesh mesh = new Mesh(positions, colours, indices,texture);
         GameItem gameItem = new GameItem(mesh);
         gameItem.setPosition(0,0,-2);
         gameItems = new GameItem[]{gameItem};

@@ -19,8 +19,6 @@ public class Renderer {
     private static final float Z_NEAR = 0.01f;
     //远平面距离
     private static final float Z_FAR = 1000.f;
-    //投影矩阵，将三维坐标投影到二位屏幕上
-    private Matrix4f projectionMatrix;
 
     //着色器程序
     private ShaderProgram shaderProgram;
@@ -35,14 +33,15 @@ public class Renderer {
     public void init(Window window) throws Exception{
         //创建着色器
         shaderProgram = new ShaderProgram();
-        shaderProgram.createVertexShader(Utils.loadResource("/vertex.vs"));
-        shaderProgram.createFragmentShader(Utils.loadResource("/fragment.fs"));
+        shaderProgram.createVertexShader(Utils.loadResource("/shaders/vertex.vs"));
+        shaderProgram.createFragmentShader(Utils.loadResource("/shaders/fragment.fs"));
         shaderProgram.link();
 
-        //为世界和投影矩阵 创建 Uniforms
+        //为世界和投影矩阵 创建 Uniforms,vertex.vs的main中没有使用该值则会报错
         shaderProgram.createUniform("projectionMatrix");
         shaderProgram.createUniform("worldMatrix");
-        window.setClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        shaderProgram.createUniform("texture_sampler");
+        //window.setClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     }
 
     //清屏函数
@@ -58,14 +57,18 @@ public class Renderer {
             window.setResized(false);
         }
         shaderProgram.bind();
-
+        //投影矩阵，将三维坐标投影到二位屏幕上
         Matrix4f projectionMatrix = transformation.getProjectionMatrix(FOV, window.getWindowWidth(), window.getWindowHeight(), Z_NEAR, Z_FAR);
         shaderProgram.setUniform("projectionMatrix",projectionMatrix);
+
+        //设置纹理单元，为显存中的0号纹理单元
+        shaderProgram.setUniform("texture_sampler", 0);
 
         //绘制每一个gameItem
         for (GameItem gameItem : gameItems){
             Matrix4f worldMatrix = transformation.getWorldMatrix(gameItem.getPosition(),gameItem.getRotation(),gameItem.getScale());
             shaderProgram.setUniform("worldMatrix",worldMatrix);
+            //绘制
             gameItem.getMesh().render();
         }
 

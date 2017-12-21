@@ -23,6 +23,7 @@
     <properties>
         <lwjgl.version>3.1.5</lwjgl.version>
         <joml.version>1.7.1</joml.version>
+        <pngdecoder.version>1.0</pngdecoder.version>
     </properties>
 
     <dependencies>
@@ -31,6 +32,12 @@
             <groupId>org.joml</groupId>
             <artifactId>joml</artifactId>
             <version>${joml.version}</version>
+        </dependency>
+        <!--图片加载器，用于加载材质-->
+        <dependency>
+            <groupId>org.l33tlabs.twl</groupId>
+            <artifactId>pngdecoder</artifactId>
+            <version>${pngdecoder.version}</version>
         </dependency>
         <!---->
         <dependency>

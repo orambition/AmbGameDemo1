@@ -6,8 +6,7 @@ import org.lwjgl.opengl.GL;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11.GL_TRUE;
-import static org.lwjgl.opengl.GL11.glClearColor;
+import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Window {
@@ -79,6 +78,8 @@ public class Window {
         glfwShowWindow(windowHandle);
         GL.createCapabilities();
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        //启用深度测试？让像素点按照深度绘制，而不是随机顺序绘制
+        glEnable(GL_DEPTH_TEST);
     }
 
     public void setClearColor(float r, float g, float b, float alpha) {

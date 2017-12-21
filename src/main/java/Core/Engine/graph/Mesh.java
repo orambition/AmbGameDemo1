@@ -4,10 +4,14 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.lwjgl.opengl.ARBVertexArrayObject.glBindVertexArray;
 import static org.lwjgl.opengl.ARBVertexArrayObject.glDeleteVertexArrays;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
@@ -20,28 +24,35 @@ public class Mesh {
     /*Vertex Buffer Object
      * 可以包含坐标、纹理、颜色、等信息*/
     private final int vaoId;
-    private final int posVboId;
+
+    /*private final int posVboId;
     private final int colourVboId;
-    private final int idxVboId;
+    private final int idxVboId;*/
+    private final List<Integer> vboIdList;
+
     private final int vertexCount;
+    private final Texture texture;
     //位置，颜色，顺序
-    public Mesh(float[] positions, float[] colours, int[] indices){
+    public Mesh(float[] positions, float[] textCoords, int[] indices, Texture texture){
         FloatBuffer posBuffer = null;
-        FloatBuffer colourBuffer = null;
+        FloatBuffer textCoordsBuffer  = null;
         IntBuffer indicesBuffer = null;
         try {
+            this.texture = texture;
             vertexCount = indices.length;
+            vboIdList = new ArrayList<>();
 
-            //创建vao,并绑定
+            //创建vao,并绑定，绑定的意思是指，在之后的函数中操作的是这个vao
             vaoId = glGenVertexArrays();
             glBindVertexArray(vaoId);
 
             //创建 点 vbo,并绑定
-            posVboId = glGenBuffers();
+            int vboId = glGenBuffers();
+            vboIdList.add(vboId);
             //使用MemoryUtil在非堆内存创建缓冲区，因为java存储在堆内存的数据不能通过本地OpenGl代码访问
             posBuffer = MemoryUtil.memAllocFloat(positions.length);
             posBuffer.put(positions).flip();
-            glBindBuffer(GL_ARRAY_BUFFER, posVboId);
+            glBindBuffer(GL_ARRAY_BUFFER, vboId);
             glBufferData(GL_ARRAY_BUFFER, posBuffer, GL_STATIC_DRAW);
             /*定义数据结构和存储在其中的VAO属性列表
              * 索引：指定着色器期望此数据的位置。
@@ -53,19 +64,22 @@ public class Mesh {
              * 偏移量：指定缓冲区中第一个组件的偏移量。*/
             glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
-            //创建 Color vbo
-            colourVboId = glGenBuffers();
-            colourBuffer = MemoryUtil.memAllocFloat(colours.length);
-            colourBuffer.put(colours).flip();
-            glBindBuffer(GL_ARRAY_BUFFER,colourVboId);
-            glBufferData(GL_ARRAY_BUFFER,colourBuffer,GL_STATIC_DRAW);
-            glVertexAttribPointer(1,3,GL_FLOAT,false,0,0);
+            //创建 coordinates vbo(原colour)
+            vboId = glGenBuffers();
+            vboIdList.add(vboId);
+            textCoordsBuffer = MemoryUtil.memAllocFloat(textCoords.length);
+            textCoordsBuffer.put(textCoords).flip();
+            //绑定别的vbo，就是更改了操作对象
+            glBindBuffer(GL_ARRAY_BUFFER,vboId);
+            glBufferData(GL_ARRAY_BUFFER,textCoordsBuffer,GL_STATIC_DRAW);
+            glVertexAttribPointer(1,2,GL_FLOAT,false,0,0);
 
             //创建索引vbo,并绑定
-            idxVboId = glGenBuffers();
+            vboId = glGenBuffers();
+            vboIdList.add(vboId);
             indicesBuffer = MemoryUtil.memAllocInt(indices.length);
             indicesBuffer.put(indices).flip();
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxVboId);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboId);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW);
 
             //完成后解绑vbo和vao
@@ -76,8 +90,8 @@ public class Mesh {
             //手动释放申请的内存
             if (posBuffer != null)
                 MemoryUtil.memFree(posBuffer);
-            if (colourBuffer != null)
-                MemoryUtil.memFree(colourBuffer);
+            if (textCoordsBuffer != null)
+                MemoryUtil.memFree(textCoordsBuffer);
             if (indicesBuffer != null)
                 MemoryUtil.memFree(indicesBuffer);
         }//完成以上步骤，数据就已经在显存中了
@@ -92,6 +106,11 @@ public class Mesh {
     }
 
     public void render(){
+        // 激活0号纹理单元
+        glActiveTexture(GL_TEXTURE0);
+        // 将传进来的纹理与其绑定
+        glBindTexture(GL_TEXTURE_2D, texture.getId());
+
         // Bind to the VAO
         glBindVertexArray(getVaoId());
         glEnableVertexAttribArray(0);//启用数组1，对用位置
@@ -113,10 +132,11 @@ public class Mesh {
 
         // Delete the VBOs
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDeleteBuffers(posVboId);
-        glDeleteBuffers(colourVboId);
-        glDeleteBuffers(idxVboId);
-
+        for (int vboId : vboIdList) {
+            glDeleteBuffers(vboId);
+        }
+        // Delete the texture
+        texture.cleanup();
         // Delete the VAO
         glBindVertexArray(0);
         glDeleteVertexArrays(vaoId);

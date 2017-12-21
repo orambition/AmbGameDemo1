@@ -21,11 +21,11 @@ import static org.lwjgl.opengl.GL20.*;
 public class ShaderProgram {
     //句柄
     private final int programId;
-    //点着色器
+    //顶点 着色器
     private int vertexShaderId;
-    //线段着色器
+    //片段 着色器
     private int fragmentShaderId;
-    //uniform的句柄，存位置
+    //uniform，其他要传递的数据？
     private final Map<String, Integer> uniforms;
 
     //新建GL程序
@@ -52,6 +52,9 @@ public class ShaderProgram {
             glUniformMatrix4fv(uniforms.get(uniformName), false, fb);
         }
     }
+    public void setUniform(String uniformName, int value) {
+        glUniform1i(uniforms.get(uniformName), value);
+    }
 
     //创建点着色器
     public void createVertexShader(String shaderCode)throws Exception{
@@ -63,7 +66,7 @@ public class ShaderProgram {
     }
     //创建着色器，根据类型
     protected int createShader(String shaderCode,int shaderType)throws Exception{
-        //创建着色器
+        //创建着色器，shaderId为句柄
         int shaderId = glCreateShader(shaderType);
         if (shaderId == 0)
             throw new Exception("Error creating shader. Type: " + shaderType);
