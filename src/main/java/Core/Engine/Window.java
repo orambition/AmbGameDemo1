@@ -81,7 +81,9 @@ public class Window {
         //启用深度测试？让像素点按照深度绘制，而不是随机顺序绘制
         glEnable(GL_DEPTH_TEST);
     }
-
+    public long getWindowHandle() {
+        return windowHandle;
+    }
     public void setClearColor(float r, float g, float b, float alpha) {
         glClearColor(r, g, b, alpha);
     }
