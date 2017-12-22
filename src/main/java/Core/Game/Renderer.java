@@ -6,6 +6,7 @@ import Core.Engine.GameItem;
 import Core.Engine.Utils;
 import Core.Engine.Window;
 import Core.Engine.graph.Camera;
+import Core.Engine.graph.Mesh;
 import Core.Engine.graph.ShaderProgram;
 import Core.Engine.graph.Transformation;
 import org.joml.Matrix4f;
@@ -24,7 +25,7 @@ public class Renderer {
     //着色器程序
     private ShaderProgram shaderProgram;
 
-    //
+    //获取投影、视角等各种矩阵
     private final Transformation transformation;
 
     public Renderer(){
@@ -42,7 +43,9 @@ public class Renderer {
         shaderProgram.createUniform("projectionMatrix");
         shaderProgram.createUniform("modelViewMatrix");
         shaderProgram.createUniform("texture_sampler");
-        //window.setClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        //创建模型的默认颜色，以及是否使用颜色（当useC...=1时）
+        shaderProgram.createUniform("colour");
+        shaderProgram.createUniform("useColour");
     }
 
     //清屏函数
@@ -70,10 +73,15 @@ public class Renderer {
 
         //绘制每一个gameItem
         for (GameItem gameItem : gameItems){
+            Mesh mesh = gameItem.getMesh();
+            //设置该物体的模型视野矩阵
             Matrix4f modelViewMatrix  = transformation.getModelViewMatrix(gameItem,viewMatrix);
             shaderProgram.setUniform("modelViewMatrix",modelViewMatrix);
-            //绘制
-            gameItem.getMesh().render();
+            //设置该物体的纹理
+            shaderProgram.setUniform("colour", mesh.getColour());
+            shaderProgram.setUniform("useColour", mesh.isTextured() ? 0 : 1);
+            //绘制该物体的mesh
+            mesh.render();
         }
 
         shaderProgram.unbind();

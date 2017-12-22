@@ -1,5 +1,6 @@
 package Core.Engine.graph;
 
+import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
@@ -30,15 +31,20 @@ public class Mesh {
     private final int idxVboId;*/
     private final List<Integer> vboIdList;
 
-    private final int vertexCount;
-    private final Texture texture;
-    //位置，颜色，顺序
-    public Mesh(float[] positions, float[] textCoords, int[] indices, Texture texture){
-        FloatBuffer posBuffer = null;
-        FloatBuffer textCoordsBuffer  = null;
-        IntBuffer indicesBuffer = null;
+    private final int vertexCount;//顶点数量
+    private Texture texture;//纹理
+    private Vector3f colour;
+
+    private static final Vector3f DEFAULT_COLOUR = new Vector3f(1.0f, 1.0f, 1.0f);
+
+    //将传进来的数据，位置坐标、纹理坐标、顶点法线、顺序等vbo,通过缓存存入vao（显存？）
+    public Mesh(float[] positions, float[] textCoords,float[] normals, int[] indices){
+        FloatBuffer posBuffer = null;//位置缓存
+        FloatBuffer textCoordsBuffer  = null;//纹理坐标缓存
+        FloatBuffer vecNormalsBuffer = null;//发现缓存
+        IntBuffer indicesBuffer = null;//序号缓存（确定了面）
         try {
-            this.texture = texture;
+            colour = DEFAULT_COLOUR;
             vertexCount = indices.length;
             vboIdList = new ArrayList<>();
 
@@ -64,7 +70,7 @@ public class Mesh {
              * 偏移量：指定缓冲区中第一个组件的偏移量。*/
             glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
-            //创建 coordinates vbo(原colour)
+            //创建 纹理坐标 vbo
             vboId = glGenBuffers();
             vboIdList.add(vboId);
             textCoordsBuffer = MemoryUtil.memAllocFloat(textCoords.length);
@@ -73,6 +79,15 @@ public class Mesh {
             glBindBuffer(GL_ARRAY_BUFFER,vboId);
             glBufferData(GL_ARRAY_BUFFER,textCoordsBuffer,GL_STATIC_DRAW);
             glVertexAttribPointer(1,2,GL_FLOAT,false,0,0);
+
+            // 顶点法线 VBO
+            vboId = glGenBuffers();
+            vboIdList.add(vboId);
+            vecNormalsBuffer = MemoryUtil.memAllocFloat(normals.length);
+            vecNormalsBuffer.put(normals).flip();
+            glBindBuffer(GL_ARRAY_BUFFER, vboId);
+            glBufferData(GL_ARRAY_BUFFER, vecNormalsBuffer, GL_STATIC_DRAW);
+            glVertexAttribPointer(2, 3, GL_FLOAT, false, 0, 0);
 
             //创建索引vbo,并绑定
             vboId = glGenBuffers();
@@ -92,9 +107,26 @@ public class Mesh {
                 MemoryUtil.memFree(posBuffer);
             if (textCoordsBuffer != null)
                 MemoryUtil.memFree(textCoordsBuffer);
+            if (vecNormalsBuffer != null)
+                MemoryUtil.memFree(vecNormalsBuffer);
             if (indicesBuffer != null)
                 MemoryUtil.memFree(indicesBuffer);
         }//完成以上步骤，数据就已经在显存中了
+    }
+    public boolean isTextured() {
+        return this.texture != null;
+    }
+    public Texture getTexture() {
+        return this.texture;
+    }
+    public void setTexture(Texture texture) {
+        this.texture = texture;
+    }
+    public void setColour(Vector3f colour) {
+        this.colour = colour;
+    }
+    public Vector3f getColour() {
+        return this.colour;
     }
 
     public int getVaoId() {
@@ -104,17 +136,19 @@ public class Mesh {
     public int getVertexCount() {
         return vertexCount;
     }
-
+    //通过控制vao中的数组，进行显示相应的信息
     public void render(){
-        // 激活0号纹理单元
-        glActiveTexture(GL_TEXTURE0);
-        // 将传进来的纹理与其绑定
-        glBindTexture(GL_TEXTURE_2D, texture.getId());
-
+        if (texture != null){
+            // 激活0号纹理单元
+            glActiveTexture(GL_TEXTURE0);
+            // 将传进来的纹理与其绑定
+            glBindTexture(GL_TEXTURE_2D, texture.getId());
+        }
         // Bind to the VAO
         glBindVertexArray(getVaoId());
         glEnableVertexAttribArray(0);//启用数组1，对用位置
-        glEnableVertexAttribArray(1);//启用数组2，对用颜色
+        glEnableVertexAttribArray(1);//启用数组2，对用纹理坐标
+        glEnableVertexAttribArray(2);//启用数组2，对用顶点法线
         /*绘制图形，参数：
          * 模式：指定渲染的原语，在此情况下的三角形。
          * 计数：指定要呈现的元素的数目。
@@ -124,7 +158,9 @@ public class Mesh {
         // Restore state
         glDisableVertexAttribArray(0);//关闭数组1
         glDisableVertexAttribArray(1);//关闭数组2
+        glDisableVertexAttribArray(2);//关闭数组3
         glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D,0);
     }
 
     public void cleanUp() {
@@ -135,8 +171,11 @@ public class Mesh {
         for (int vboId : vboIdList) {
             glDeleteBuffers(vboId);
         }
+
         // Delete the texture
-        texture.cleanup();
+        if (texture != null)
+            texture.cleanup();
+
         // Delete the VAO
         glBindVertexArray(0);
         glDeleteVertexArrays(vaoId);

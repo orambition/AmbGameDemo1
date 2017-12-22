@@ -4,6 +4,7 @@ package Core.Engine.graph;
 * 渲染的方式*/
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.FloatBuffer;
@@ -43,7 +44,7 @@ public class ShaderProgram {
             throw new Exception("Could not find uniform:" + uniformName);
         uniforms.put(uniformName, uniformLocation);
     }
-    //为Uniform设置值
+    //设置值为矩阵的Uniform
     public void setUniform(String uniformName, Matrix4f value) {
         // Dump the matrix into a float buffer
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -52,8 +53,13 @@ public class ShaderProgram {
             glUniformMatrix4fv(uniforms.get(uniformName), false, fb);
         }
     }
+    //设置值为整形的Uniform
     public void setUniform(String uniformName, int value) {
         glUniform1i(uniforms.get(uniformName), value);
+    }
+    //设置值为向量的Uniform
+    public void setUniform(String uniformName, Vector3f value) {
+        glUniform3f(uniforms.get(uniformName), value.x, value.y, value.z);
     }
 
     //创建点着色器
