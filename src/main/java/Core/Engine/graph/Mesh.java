@@ -1,6 +1,5 @@
 package Core.Engine.graph;
 
-import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
@@ -32,10 +31,10 @@ public class Mesh {
     private final List<Integer> vboIdList;
 
     private final int vertexCount;//顶点数量
-    private Texture texture;//纹理
+    /*private Texture texture;//纹理
     private Vector3f colour;
-
-    private static final Vector3f DEFAULT_COLOUR = new Vector3f(1.0f, 1.0f, 1.0f);
+    private static final Vector3f DEFAULT_COLOUR = new Vector3f(1.0f, 1.0f, 1.0f);*/
+    private Material material;//材质
 
     //将传进来的数据，位置坐标、纹理坐标、顶点法线、顺序等vbo,通过缓存存入vao（显存？）
     public Mesh(float[] positions, float[] textCoords,float[] normals, int[] indices){
@@ -44,7 +43,6 @@ public class Mesh {
         FloatBuffer vecNormalsBuffer = null;//发现缓存
         IntBuffer indicesBuffer = null;//序号缓存（确定了面）
         try {
-            colour = DEFAULT_COLOUR;
             vertexCount = indices.length;
             vboIdList = new ArrayList<>();
 
@@ -113,20 +111,12 @@ public class Mesh {
                 MemoryUtil.memFree(indicesBuffer);
         }//完成以上步骤，数据就已经在显存中了
     }
-    public boolean isTextured() {
-        return this.texture != null;
+    public Material getMaterial() {
+        return material;
     }
-    public Texture getTexture() {
-        return this.texture;
-    }
-    public void setTexture(Texture texture) {
-        this.texture = texture;
-    }
-    public void setColour(Vector3f colour) {
-        this.colour = colour;
-    }
-    public Vector3f getColour() {
-        return this.colour;
+
+    public void setMaterial(Material material) {
+        this.material = material;
     }
 
     public int getVaoId() {
@@ -138,6 +128,7 @@ public class Mesh {
     }
     //通过控制vao中的数组，进行显示相应的信息
     public void render(){
+        Texture texture = material.getTexture();
         if (texture != null){
             // 激活0号纹理单元
             glActiveTexture(GL_TEXTURE0);
@@ -173,6 +164,7 @@ public class Mesh {
         }
 
         // Delete the texture
+        Texture texture = material.getTexture();
         if (texture != null)
             texture.cleanup();
 

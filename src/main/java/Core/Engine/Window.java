@@ -27,7 +27,6 @@ public class Window {
     }
     //初始化
     public void init(){
-
         GLFWErrorCallback.createPrint(System.err).set();
         // Initialize GLFW. Most GLFW functions will not work before doing this.
         if ( !glfwInit() )
@@ -80,6 +79,8 @@ public class Window {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         //启用深度测试？让像素点按照深度绘制，而不是随机顺序绘制
         glEnable(GL_DEPTH_TEST);
+        //以多边形模式进行显示，这将显示模型的三角形框架
+        //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     }
     public long getWindowHandle() {
         return windowHandle;
