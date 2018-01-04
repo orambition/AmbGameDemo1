@@ -69,7 +69,7 @@ public class GameDemo1Logic implements IGameLogic {
         ambientLight = new Vector3f(0.3f, 0.3f, 0.3f);
         //初始化点光源
         Vector3f lightColour = new Vector3f(1, 1, 1);
-        Vector3f lightPosition = new Vector3f(0, 0, 1);
+        Vector3f lightPosition = new Vector3f(1, 0, 1);
         float lightIntensity = 1.0f;
         PointLight pointLight = new PointLight(lightColour, lightPosition, lightIntensity);
         PointLight.Attenuation att = new PointLight.Attenuation(0.0f, 0.0f, 1.0f);
@@ -77,13 +77,13 @@ public class GameDemo1Logic implements IGameLogic {
         pointLightList = new PointLight[]{pointLight};
         //初始化聚光灯
         lightPosition = new Vector3f(0, 0.0f, 10f);
-        pointLight = new PointLight(new Vector3f(1, 1, 1), lightPosition, lightIntensity);
+        pointLight = new PointLight(lightColour, lightPosition, lightIntensity);
         att = new PointLight.Attenuation(0.0f, 0.0f, 0.02f);
         pointLight.setAttenuation(att);
         Vector3f coneDir = new Vector3f(0, 0, -1);
         float cutoff = (float) Math.cos(Math.toRadians(140));
         SpotLight spotLight = new SpotLight(pointLight, coneDir, cutoff);
-        spotLightList = new SpotLight[]{spotLight, new SpotLight(spotLight)};
+        spotLightList = new SpotLight[]{spotLight};
         //初始化平行光源
         lightPosition = new Vector3f(-1, 0, 0);
         lightColour = new Vector3f(1, 1, 1);
@@ -108,15 +108,16 @@ public class GameDemo1Logic implements IGameLogic {
         } else if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL)){
             cameraInc.y = -1;
         }
-        float lightPos = spotLightList[0].getPointLight().getPosition().z;
+        float lightPos = pointLightList[0].getPosition().y;
+        float lightPos2 = spotLightList[0].getPointLight().getPosition().z;
         if (window.isKeyPressed(GLFW_KEY_UP)) {
-
+            this.pointLightList[0].getPosition().y = lightPos + 0.1f;
         } else if (window.isKeyPressed(GLFW_KEY_DOWN)) {
-
+            this.pointLightList[0].getPosition().y = lightPos - 0.1f;
         } else if (window.isKeyPressed(GLFW_KEY_LEFT)) {
-            this.spotLightList[0].getPointLight().getPosition().z = lightPos + 0.1f;
+            this.spotLightList[0].getPointLight().getPosition().z = lightPos2 + 0.1f;
         } else if (window.isKeyPressed(GLFW_KEY_RIGHT)) {
-            this.spotLightList[0].getPointLight().getPosition().z = lightPos - 0.1f;
+            this.spotLightList[0].getPointLight().getPosition().z = lightPos2 - 0.1f;
         }
     }
 
@@ -139,7 +140,7 @@ public class GameDemo1Logic implements IGameLogic {
         }
         double spotAngleRad = Math.toRadians(spotAngle);
         Vector3f coneDir = spotLightList[0].getConeDirection();
-        coneDir.y = (float) Math.sin(spotAngleRad);
+        coneDir.x = (float) Math.sin(spotAngleRad);
 
         //更新平行光的角度，模拟太阳
         lightAngle += 1.1f;
