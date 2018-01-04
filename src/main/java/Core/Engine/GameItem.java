@@ -5,7 +5,7 @@ import org.joml.Vector3f;
 
 public class GameItem {
     //网格数据
-    private final Mesh mesh;
+    private Mesh mesh;
     //位置
     private final Vector3f position;
     //缩放
@@ -13,11 +13,14 @@ public class GameItem {
     //旋转
     private final Vector3f rotation;
 
-    public GameItem(Mesh mesh) {
-        this.mesh = mesh;
+    public GameItem() {
         position = new Vector3f(0, 0, 0);
         scale = 1;
         rotation = new Vector3f(0, 0, 0);
+    }
+    public GameItem(Mesh mesh) {
+        this();
+        this.mesh = mesh;
     }
 
     public Vector3f getPosition() {
@@ -51,4 +54,9 @@ public class GameItem {
     public Mesh getMesh() {
         return mesh;
     }
+
+    public void setMesh(Mesh mesh){
+        this.mesh = mesh;
+    }
+
 }

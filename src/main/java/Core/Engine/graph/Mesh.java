@@ -1,5 +1,8 @@
 package Core.Engine.graph;
-
+//网格类，用于储存网格中的点以及点的各种信息
+//网格由点构成，点包含：位置坐标、纹理坐标、法线等信息
+//网格新增一个材质属性，纹理包含在其中，材质含有光反射等信息
+//一个obj模型文件就是对网格信息的描述文件
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
@@ -40,7 +43,7 @@ public class Mesh {
     public Mesh(float[] positions, float[] textCoords,float[] normals, int[] indices){
         FloatBuffer posBuffer = null;//位置缓存
         FloatBuffer textCoordsBuffer  = null;//纹理坐标缓存
-        FloatBuffer vecNormalsBuffer = null;//发现缓存
+        FloatBuffer vecNormalsBuffer = null;//法线缓存
         IntBuffer indicesBuffer = null;//序号缓存（确定了面）
         try {
             vertexCount = indices.length;
@@ -132,7 +135,7 @@ public class Mesh {
         if (texture != null){
             // 激活0号纹理单元
             glActiveTexture(GL_TEXTURE0);
-            // 将传进来的纹理与其绑定
+            // 加载纹理。将传进来的纹理与其绑定
             glBindTexture(GL_TEXTURE_2D, texture.getId());
         }
         // Bind to the VAO
@@ -155,19 +158,20 @@ public class Mesh {
     }
 
     public void cleanUp() {
-        glDisableVertexAttribArray(0);
-
-        // Delete the VBOs
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        for (int vboId : vboIdList) {
-            glDeleteBuffers(vboId);
-        }
-
+        deleteBuffers();
         // Delete the texture
         Texture texture = material.getTexture();
         if (texture != null)
             texture.cleanup();
 
+    }
+    public void deleteBuffers() {
+        glDisableVertexAttribArray(0);
+        // Delete the VBOs
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        for (int vboId : vboIdList) {
+            glDeleteBuffers(vboId);
+        }
         // Delete the VAO
         glBindVertexArray(0);
         glDeleteVertexArrays(vaoId);

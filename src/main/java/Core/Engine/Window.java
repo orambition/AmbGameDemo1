@@ -46,7 +46,7 @@ public class Window {
         if ( windowHandle == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
 
-        // 设置改变窗口大学时的回掉函数，当窗口大小发生变化时执行该函数
+        // 设置改变窗口大小时的回掉函数，当窗口大小发生变化时执行该函数
         glfwSetFramebufferSizeCallback(windowHandle, (window, width, height) -> {
             this.windowWidth = width;
             this.windowHeight = height;
@@ -81,6 +81,9 @@ public class Window {
         glEnable(GL_DEPTH_TEST);
         //以多边形模式进行显示，这将显示模型的三角形框架
         //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+        // 支持透明，首次添加于创建hud
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
     public long getWindowHandle() {
         return windowHandle;

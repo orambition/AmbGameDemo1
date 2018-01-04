@@ -7,6 +7,7 @@ public class Main {
     public static void main(String[] args){
         try{
             boolean vSync = true;
+
             IGameLogic gameLogic = new GameDemo1Logic();
             GameEngine gameEngine = new GameEngine("Amb",1024,768,vSync,gameLogic);
             gameEngine.start();
