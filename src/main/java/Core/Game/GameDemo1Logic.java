@@ -131,6 +131,9 @@ public class GameDemo1Logic implements IGameLogic {
         if (mouseInput.isLeftButtonPressed()) {
             Vector2f rotVec = mouseInput.getDisplVec();
             camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY, 0);
+
+            //hud更新
+            hud.rotateCompass(camera.getRotation().y);
         }
 
         // 更新聚光灯

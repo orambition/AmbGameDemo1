@@ -39,7 +39,7 @@ public class Transformation {
         viewMatrix.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
         return viewMatrix;
     }
-    //用于获取比例矩阵，当窗口变化时hud要相应的变化而不是拉伸
+    //用于获取正交投影矩阵，可以避免失真当窗口变化时hud要相应的变化而不是拉伸
     public final Matrix4f getOrthoProjectionMatrix(float left, float right, float bottom, float top) {
         orthoMatrix.identity();
         orthoMatrix.setOrtho2D(left, right, bottom, top);

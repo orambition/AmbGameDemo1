@@ -1,8 +1,10 @@
 package Core.Engine.graph;
 //纹理类，用于加载纹理，并返回纹理id
+
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -15,8 +17,12 @@ public class Texture {
     private final int height;
 
     public Texture(String fileName) throws Exception {
+        this(Texture.class.getResourceAsStream(fileName));
+    }
+
+    public Texture(InputStream is) throws Exception {
         // Load Texture file
-        PNGDecoder decoder = new PNGDecoder(Texture.class.getResourceAsStream(fileName));
+        PNGDecoder decoder = new PNGDecoder(is);
         this.width = decoder.getWidth();//获取长宽，在建立hud时首次使用
         this.height = decoder.getHeight();
         // Load texture contents into a byte buffer
