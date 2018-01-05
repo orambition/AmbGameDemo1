@@ -18,9 +18,11 @@ public class Renderer {
     //远平面距离
     private static final float Z_FAR = 1000.f;
 
-    //着色器程序，场景和hud的
+    //着色器程序，天空盒、场景和hud的
+    private ShaderProgram skyBoxShaderProgram;
     private ShaderProgram sceneShaderProgram;
     private ShaderProgram hudShaderProgram;
+
 
     //获取投影、视角等各种矩阵的工具类
     private final Transformation transformation;
@@ -37,15 +39,29 @@ public class Renderer {
         specularPower = 10f;
     }
     public void init(Window window) throws Exception {
+        setupSkyBoxShader();
         setupSceneShader();
         setupHudShader();
     }
+    //创建天空盒
+    private void setupSkyBoxShader() throws Exception{
+        skyBoxShaderProgram = new ShaderProgram();
+        skyBoxShaderProgram.createVertexShader(Utils.loadResource("/shaders/skybox_vertex.vs"));
+        skyBoxShaderProgram.createFragmentShader(Utils.loadResource("/shaders/skybox_fragment.fs"));
+        skyBoxShaderProgram.link();
+
+        skyBoxShaderProgram.createUniform("projectionMatrix");
+        skyBoxShaderProgram.createUniform("modelViewMatrix");
+        skyBoxShaderProgram.createUniform("texture_sampler");
+        skyBoxShaderProgram.createUniform("ambientLight");
+
+    }
     //创建场景着色器
-    public void setupSceneShader() throws Exception {
+    private void setupSceneShader() throws Exception {
         //加载着色器文件
         sceneShaderProgram = new ShaderProgram();
-        sceneShaderProgram.createVertexShader(Utils.loadResource("/shaders/vertex.vs"));
-        sceneShaderProgram.createFragmentShader(Utils.loadResource("/shaders/fragment.fs"));
+        sceneShaderProgram.createVertexShader(Utils.loadResource("/shaders/scene_vertex.vs"));
+        sceneShaderProgram.createFragmentShader(Utils.loadResource("/shaders/scene_fragment.fs"));
         sceneShaderProgram.link();
 
         //为世界和投影矩阵 创建 Uniforms,vertex.vs的main中没有使用该值则会报错
@@ -73,25 +89,46 @@ public class Renderer {
         hudShaderProgram.createUniform("colour");
         hudShaderProgram.createUniform("hasTexture");
     }
+
     //清屏函数
     public void clear(){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);//清屏
     }
 
     //渲染函数
-    public void render(Window window, Camera camera, GameItem[] gameItems, SceneLight sceneLight, IHud hud) {
+    public void render(Window window, Camera camera, Scene scene, IHud hud) {
         clear();
         if (window.isResized()) {
             glViewport(0, 0, window.getWindowWidth(), window.getWindowHeight());
             window.setResized(false);
         }
 
-        renderScene(window, camera, gameItems, sceneLight);
+        renderScene(window, camera, scene);
+
+        renderSkyBox(window,camera,scene);
         //绘制HUD
         renderHud(window, hud);
     }
+    private void renderSkyBox(Window window,Camera camera,Scene scene){
+        skyBoxShaderProgram.bind();
+
+        skyBoxShaderProgram.setUniform("texture_sampler",0);
+        Matrix4f projectionMatrix = transformation.getProjectionMatrix(FOV, window.getWindowWidth(), window.getWindowHeight(), Z_NEAR, Z_FAR);
+        skyBoxShaderProgram.setUniform("projectionMatrix", projectionMatrix);
+        SkyBox skyBox = scene.getSkyBox();
+        Matrix4f viewMatrix = transformation.getViewMatrix(camera);
+        //天空盒并不随着摄像机移动，所以将xyz的变化设置为0
+        viewMatrix.m30 = 0;
+        viewMatrix.m31 = 0;
+        viewMatrix.m32 = 0;
+        Matrix4f modelViewMatrix = transformation.getModelViewMatrix(skyBox, viewMatrix);
+        skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
+        skyBoxShaderProgram.setUniform("ambientLight", scene.getSceneLight().getAmbientLight());
+        scene.getSkyBox().getMesh().render();
+        skyBoxShaderProgram.unbind();
+    }
     //绘制场景
-    public void renderScene(Window window, Camera camera, GameItem[] gameItems, SceneLight sceneLight) {
+    private void renderScene(Window window, Camera camera, Scene scene) {
         sceneShaderProgram.bind();
 
         //投影矩阵，将三维坐标投影到二位屏幕上
@@ -102,13 +139,13 @@ public class Renderer {
         Matrix4f viewMatrix = transformation.getViewMatrix(camera);
 
         //设置环境光、点光源数组、聚光灯数组、平行光和强度
-        renderLights(viewMatrix, sceneLight);
+        renderLights(viewMatrix, scene.getSceneLight());
 
         //设置纹理单元，为显存中的0号纹理单元，将纹理放入0号单元的操作有Mesh完成
         sceneShaderProgram.setUniform("texture_sampler", 0);
 
         //绘制每一个gameItem
-        for (GameItem gameItem : gameItems){
+        for (GameItem gameItem : scene.getGameItems()){
             Mesh mesh = gameItem.getMesh();
             //设置该物体的模型视野矩阵；将物体的位置矩阵与视野矩阵相乘，因为视野会影响物体的显示坐标，所以需要进行改处理
             Matrix4f modelViewMatrix  = transformation.getModelViewMatrix(gameItem,viewMatrix);

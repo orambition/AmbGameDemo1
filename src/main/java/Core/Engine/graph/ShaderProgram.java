@@ -177,7 +177,7 @@ public class ShaderProgram {
         int shaderId = glCreateShader(shaderType);
         if (shaderId == 0)
             throw new Exception("Error creating shader. Type: " + shaderType);
-        //读取源文件eg. vertex.vs
+        //读取源文件eg. scene_vertex.vs
         glShaderSource(shaderId,shaderCode);
         //编译着色器
         glCompileShader(shaderId);

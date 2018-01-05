@@ -85,7 +85,7 @@ public class FontTexture {
             out.flush();
             is = new ByteArrayInputStream(out.toByteArray());
         }
-        texture = new Texture("/textures/Temp.png");
+        texture = new Texture(is);
     }
     //内部类，用于存储每个字符的信息，即开始位置和宽度，因为所有字符按最高字符同一设置高度，并水平排列，所以只需要知道起始位置和宽度
     public static class CharInfo {
