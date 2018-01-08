@@ -1,6 +1,7 @@
-package Core.Engine;
+package Core.Engine.items;
 //文字类，用于加载文字纹理，在建立Hud时首次添加
 
+import Core.Engine.Utils;
 import Core.Engine.graph.FontTexture;
 import Core.Engine.graph.Material;
 import Core.Engine.graph.Mesh;
@@ -8,7 +9,7 @@ import Core.Engine.graph.Mesh;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TextItem extends GameItem{
+public class TextItem extends GameItem {
 
     private static final float ZPOS = 0.0f;
     private static final int VERTICES_PER_QUAD = 4;

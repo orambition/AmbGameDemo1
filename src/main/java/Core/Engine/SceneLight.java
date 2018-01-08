@@ -2,9 +2,9 @@ package Core.Engine;
 //场景灯光，在Renderer类中首次使用，
 //将环境光、点光源、聚光灯、平行光全部汇集在此类中
 
-import Core.Engine.graph.DirectionalLight;
-import Core.Engine.graph.PointLight;
-import Core.Engine.graph.SpotLight;
+import Core.Engine.graph.lights.DirectionalLight;
+import Core.Engine.graph.lights.PointLight;
+import Core.Engine.graph.lights.SpotLight;
 import org.joml.Vector3f;
 
 public class SceneLight {

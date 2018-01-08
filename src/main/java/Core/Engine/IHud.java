@@ -1,5 +1,7 @@
 package Core.Engine;
 
+import Core.Engine.items.GameItem;
+
 public interface IHud {
     GameItem[] getGameItems();
 

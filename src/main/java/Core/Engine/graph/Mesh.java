@@ -4,7 +4,7 @@ package Core.Engine.graph;
 //网格新增一个材质属性，纹理包含在其中，材质含有光反射等信息
 //一个obj模型文件就是对网格信息的描述文件
 
-import Core.Engine.GameItem;
+import Core.Engine.items.GameItem;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;

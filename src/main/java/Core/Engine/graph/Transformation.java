@@ -6,7 +6,7 @@ package Core.Engine.graph;
 * 4、ProjectionMatrix、OrthoMatrix。得到根据相机位置而确定的世界坐标后，就可以对其进行绘制了，但绘制分为两种，即透视法和正交法，这两不同的投影方式对应着不同的投影矩阵。
 * 而上述步骤中，WorldMatrix和ViewMatrix可以放在一起实现。*/
 
-import Core.Engine.GameItem;
+import Core.Engine.items.GameItem;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 

@@ -1,4 +1,4 @@
-package Core.Engine.graph;
+package Core.Engine.graph.lights;
 //聚光灯类，就是把点光源加一个锥形限制
 import org.joml.Vector3f;
 

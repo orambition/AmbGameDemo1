@@ -1,4 +1,4 @@
-package Core.Engine.graph;
+package Core.Engine.graph.lights;
 //平行光，类似太阳光
 import org.joml.Vector3f;
 

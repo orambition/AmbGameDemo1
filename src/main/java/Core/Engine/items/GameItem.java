@@ -1,4 +1,4 @@
-package Core.Engine;
+package Core.Engine.items;
 /*模型信息类*/
 import Core.Engine.graph.Mesh;
 import org.joml.Vector3f;

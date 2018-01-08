@@ -1,9 +1,9 @@
 package Core.Game;
 //hud类
 
-import Core.Engine.GameItem;
+import Core.Engine.items.GameItem;
 import Core.Engine.IHud;
-import Core.Engine.TextItem;
+import Core.Engine.items.TextItem;
 import Core.Engine.Window;
 import Core.Engine.graph.*;
 import org.joml.Vector4f;

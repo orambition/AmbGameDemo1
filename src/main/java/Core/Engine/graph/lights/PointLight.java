@@ -1,4 +1,4 @@
-package Core.Engine.graph;
+package Core.Engine.graph.lights;
 
 import org.joml.Vector3f;
 

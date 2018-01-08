@@ -3,6 +3,9 @@ package Core.Engine.graph;
 * 用于从源文件创建着色器
 * 渲染的方式*/
 
+import Core.Engine.graph.lights.DirectionalLight;
+import Core.Engine.graph.lights.PointLight;
+import Core.Engine.graph.lights.SpotLight;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;

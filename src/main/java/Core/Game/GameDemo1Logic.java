@@ -2,6 +2,9 @@ package Core.Game;
 
 import Core.Engine.*;
 import Core.Engine.graph.*;
+import Core.Engine.graph.lights.DirectionalLight;
+import Core.Engine.items.GameItem;
+import Core.Engine.items.SkyBox;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 

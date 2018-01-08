@@ -1,4 +1,4 @@
-package Core.Engine;
+package Core.Engine.items;
 //天空盒类，用于加载天空盒这一个“物体”
 import Core.Engine.graph.Material;
 import Core.Engine.graph.Mesh;
