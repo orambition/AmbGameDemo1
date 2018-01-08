@@ -13,6 +13,7 @@ public class GameEngine implements Runnable {
 
     public GameEngine(String windowTitle, int width, int height, boolean vsSync, IGameLogic gameLogic)throws Exception{
         gameLoopThread = new Thread(this,"GAME_LOOP_THREAD");
+
         window = new Window(windowTitle,width,height,vsSync);
         mouseInput = new MouseInput();
         this.gameLogic = gameLogic;
@@ -54,14 +55,20 @@ public class GameEngine implements Runnable {
         while (running && !window.windowShouldClose()){
             elapsedTime = timer.getElapsedTime();
             accumulator += elapsedTime;
+
             input();
+
             //使游戏状态的处理速度恒定，与运行设备无关
             while (accumulator >= interval){
+
                 update(interval);
+
                 accumulator -= interval;
             }
+
             //游戏状态和屏幕渲染是分开的，更新速度也不同
             render(accumulator/interval);
+
             //没开启垂直同步则使用自己实现的sync方法
             if (!window.isvSync()){
                 sync();

@@ -60,22 +60,27 @@ public class Window {
                 glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
         });
 
-        // Get the resolution of the primary monitor
+        // 获得当前屏幕的分辨率
         GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        // Center the window
+        // 根据分辨率将新创建的窗口至于屏幕中间
         glfwSetWindowPos(
                 windowHandle,
                 (vidmode.width() - windowWidth) / 2,
                 (vidmode.height() - windowHeight) / 2
         );
-        // Make the OpenGL context current
+        // 设置opengl的上下文
         glfwMakeContextCurrent(windowHandle);
-        // Enable v-sync
+
+        // 启用垂直同步
         if (isvSync())
             glfwSwapInterval(1);
-        // Make the window visible
+
+        // 启动窗口
         glfwShowWindow(windowHandle);
+
+        //重要的一步
         GL.createCapabilities();
+
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         //启用深度测试？让像素点按照深度绘制，而不是随机顺序绘制
         glEnable(GL_DEPTH_TEST);
@@ -115,6 +120,7 @@ public class Window {
     public int getWindowHeight(){
         return windowHeight;
     }
+    //重要函数，在game主循环的render中调用，用于绘制画面
     public void update(){
         glfwSwapBuffers(windowHandle);
         glfwPollEvents();

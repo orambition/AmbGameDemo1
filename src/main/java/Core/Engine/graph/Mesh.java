@@ -24,13 +24,12 @@ public class Mesh {
      * 一个数组是一个对象，可以包含多个vbo
      * 每个vbo相当于一个属性
      * 如坐标、纹理、颜色、等*/
-    /*Vertex Buffer Object
-     * 可以包含坐标、纹理、颜色、等信息*/
+
     private final int vaoId;
 
-    /*private final int posVboId;
-    private final int colourVboId;
-    private final int idxVboId;*/
+    /*Vertex Buffer Object
+     * 可以包含坐标、纹理、颜色、等信息
+     * vbo是GPU内存中的存储单元，将要绘制的数据存入vbo opengl才可见*/
     private final List<Integer> vboIdList;
 
     private final int vertexCount;//顶点数量
@@ -54,14 +53,17 @@ public class Mesh {
             glBindVertexArray(vaoId);
 
             //创建 点 vbo,并绑定
+            //1、创建一个vbo对象
             int vboId = glGenBuffers();
             vboIdList.add(vboId);
             //使用MemoryUtil在非堆内存创建缓冲区，因为java存储在堆内存的数据不能通过本地OpenGl代码访问
             posBuffer = MemoryUtil.memAllocFloat(positions.length);
             posBuffer.put(positions).flip();
+            //2、将新建的BO绑定到GL_ARRAY_BUFFER上下文中
             glBindBuffer(GL_ARRAY_BUFFER, vboId);
+            //3、为vbo分配空间，并将数据从内存RAM中拷贝数据到BO中。
             glBufferData(GL_ARRAY_BUFFER, posBuffer, GL_STATIC_DRAW);
-            /*定义数据结构和存储在其中的VAO属性列表
+            /*4、定义数据结构和存储在其中的VAO属性列表
              * 索引：指定着色器期望此数据的位置。
              * 大小：指定每个顶点属性的组件数（从1到4）。
              * 在这种情况下，我们传递的是三维坐标，所以应该是3。
@@ -70,6 +72,7 @@ public class Mesh {
              * 步幅：指定连续的通用顶点属性之间的字节偏移量。
              * 偏移量：指定缓冲区中第一个组件的偏移量。*/
             glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+            //完成以上步骤，顶点数据已经在gpu内存中了
 
             //创建 纹理坐标 vbo
             vboId = glGenBuffers();

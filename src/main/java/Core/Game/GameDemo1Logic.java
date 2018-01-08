@@ -73,54 +73,29 @@ public class GameDemo1Logic implements IGameLogic {
         }
         scene.setGameItems(gameItems);
 
-        // Setup  SkyBox
+        // 初始化天空盒
         SkyBox skyBox = new SkyBox("/models/skybox.obj","/textures/skybox.png");
         skyBox.setScale(skyBoxScale);
         scene.setSkyBox(skyBox);
 
-        // Setup Lights
+        // 初始化光
         setupLights();
 
         //创建hud
         hud = new Hud("DEMO");
 
+        //camera.setPosition(0,10,0);
+        //设置相机的位置
         camera.getPosition().x = 0.65f;
-
-        camera.getPosition().y = 1.15f;
-
-        camera.getPosition().y = 4.34f;
-        /*sceneLight = new SceneLight();
-        //初始环境光
-        sceneLight.setAmbientLight(new Vector3f(0.3f, 0.3f, 0.3f));
-        //初始化点光源
-        Vector3f lightColour = new Vector3f(1, 1, 1);
-        Vector3f lightPosition = new Vector3f(1, 0, 1);
-        float lightIntensity = 1.0f;
-        PointLight pointLight = new PointLight(lightColour, lightPosition, lightIntensity);
-        PointLight.Attenuation att = new PointLight.Attenuation(0.0f, 0.0f, 1.0f);
-        pointLight.setAttenuation(att);//衰减
-        sceneLight.setPointLightList(new PointLight[]{pointLight});
-        //初始化聚光灯
-        lightPosition = new Vector3f(0, 0.0f, 10f);
-        pointLight = new PointLight(lightColour, lightPosition, lightIntensity);
-        att = new PointLight.Attenuation(0.0f, 0.0f, 0.02f);
-        pointLight.setAttenuation(att);
-        Vector3f coneDir = new Vector3f(0, 0, -1);
-        float cutoff = (float) Math.cos(Math.toRadians(140));
-        SpotLight spotLight = new SpotLight(pointLight, coneDir, cutoff);
-        sceneLight.setSpotLightList(new SpotLight[]{spotLight});
-        //初始化平行光源
-        lightPosition = new Vector3f(-1, 0, 0);
-        lightColour = new Vector3f(1, 1, 1);
-        sceneLight.setDirectionalLight(new DirectionalLight(lightColour, lightPosition, lightIntensity));
-*/
+        camera.getPosition().y = 100.15f;
+        camera.getPosition().z = 4.34f;
     }
     private void setupLights() {
         SceneLight sceneLight = new SceneLight();
         scene.setSceneLight(sceneLight);
-        // Ambient Light
+        // 环境光
         sceneLight.setAmbientLight(new Vector3f(1.0f, 1.0f, 1.0f));
-        // Directional Light
+        // 平行光
         float lightIntensity = 1.0f;
         Vector3f lightPosition = new Vector3f(-1, 0, 0);
         sceneLight.setDirectionalLight(new DirectionalLight(new Vector3f(1, 1, 1), lightPosition, lightIntensity));
@@ -147,24 +122,27 @@ public class GameDemo1Logic implements IGameLogic {
 
     @Override
     public void update(float interval,MouseInput mouseInput) {
-        // Update camera based on mouse
+        // 更改相机的角度，根据鼠标
         if (mouseInput.isLeftButtonPressed()) {
             Vector2f rotVec = mouseInput.getDisplVec();
             camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY, 0);
-            //hud更新
+            //hud更新，罗盘的旋转
             hud.rotateCompass(camera.getRotation().y);
         }
-        // Update camera position
+        // 更改相机的位置
         camera.movePosition(cameraInc.x * CAMERA_POS_STEP, cameraInc.y * CAMERA_POS_STEP, cameraInc.z * CAMERA_POS_STEP);
+
+        //更新场景灯光
         SceneLight sceneLight = scene.getSceneLight();
-        DirectionalLight directionalLight = sceneLight.getDirectionalLight();
         //更新平行光的角度，模拟太阳
+        DirectionalLight directionalLight = sceneLight.getDirectionalLight();
         lightAngle += 1.1f;
         if (lightAngle > 90) {//落山
             directionalLight.setIntensity(0);
             if (lightAngle >= 270) {
                 lightAngle = -90;
             }
+            //更新环境光，控制亮度
             sceneLight.getAmbientLight().set(0.3f, 0.3f, 0.4f);
         } else if (lightAngle <= -80 || lightAngle >= 80) {//日出日落
             float factor = 1 - (float) (Math.abs(lightAngle) - 80) / 10.0f;
@@ -186,7 +164,7 @@ public class GameDemo1Logic implements IGameLogic {
 
     @Override
     public void render(Window window) {
-        hud.updateSize(window);
+        hud.updateSize(window,camera);
         renderer.render(window,camera,scene,hud);
     }
 

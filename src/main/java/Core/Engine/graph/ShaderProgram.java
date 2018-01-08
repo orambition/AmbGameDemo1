@@ -30,14 +30,14 @@ public class ShaderProgram {
     //uniform，其他要传递的数据
     private final Map<String, Integer> uniforms;
 
-    //新建GL程序
+    //1、新建GL程序
     public ShaderProgram() throws Exception{
         programId = glCreateProgram();
         if (programId == 0)
             throw new Exception("Could not create Shader");
         uniforms = new HashMap<>();
     }
-    //创建Uniform
+    //创建Uniform，uniform数据是和着色器绑定的，所以由着色器创建
     public void createUniform(String uniformName) throws Exception {
         //传入该着色器的句柄，获取vertex中的值？vertex.vs的main中没有使用该值则会报错
         int uniformLocation = glGetUniformLocation(programId, uniformName);
@@ -173,23 +173,24 @@ public class ShaderProgram {
     }
     //创建着色器，根据类型
     protected int createShader(String shaderCode,int shaderType)throws Exception{
-        //创建着色器，shaderId为句柄
+        //2、创建着色器，shaderId为句柄
         int shaderId = glCreateShader(shaderType);
         if (shaderId == 0)
             throw new Exception("Error creating shader. Type: " + shaderType);
-        //读取源文件eg. scene_vertex.vs
+        //3、读取源文件eg. scene_vertex.vs
         glShaderSource(shaderId,shaderCode);
-        //编译着色器
+        //4、编译着色器
         glCompileShader(shaderId);
         //判断着色器编译是否完成
         if (glGetShaderi(shaderId,GL_COMPILE_STATUS)==0)
             throw new Exception("Error compiling Shader code: "+glGetShaderInfoLog(shaderId,1024));
-        //附加到程序中
+        //5、附加到程序中
         glAttachShader(programId,shaderId);
         return shaderId;
     }
     //链接程序
     public void link()throws Exception{
+        //6、链接opengj程序
         glLinkProgram(programId);
         if (glGetProgrami(programId,GL_LINK_STATUS) == 0)
             throw new Exception("Error linking Shader code: " + glGetProgramInfoLog(programId,1024));
@@ -203,6 +204,7 @@ public class ShaderProgram {
         if (glGetProgrami(programId,GL_VALIDATE_STATUS) == 0)
             System.err.println("Warning validating Shader code: " + glGetProgramInfoLog(programId,1024));
     }
+    //激活当前的opengl程序
     public void bind(){
         glUseProgram(programId);
     }
