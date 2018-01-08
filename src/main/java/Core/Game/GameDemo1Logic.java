@@ -5,6 +5,9 @@ import Core.Engine.graph.*;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.lwjgl.glfw.GLFW.*;
 
 public class GameDemo1Logic implements IGameLogic {
@@ -45,7 +48,7 @@ public class GameDemo1Logic implements IGameLogic {
         mesh.setMaterial(material);
 
         float blockScale = 0.25f;
-        float skyBoxScale = 10.0f;
+        float skyBoxScale = 50.0f;
         float extension = 2.0f;
 
         float startx = extension * (-skyBoxScale + blockScale);
@@ -87,7 +90,7 @@ public class GameDemo1Logic implements IGameLogic {
         //camera.setPosition(0,10,0);
         //设置相机的位置
         camera.getPosition().x = 0.65f;
-        camera.getPosition().y = 100.15f;
+        camera.getPosition().y = -0.1f;
         camera.getPosition().z = 4.34f;
     }
     private void setupLights() {
@@ -136,7 +139,7 @@ public class GameDemo1Logic implements IGameLogic {
         SceneLight sceneLight = scene.getSceneLight();
         //更新平行光的角度，模拟太阳
         DirectionalLight directionalLight = sceneLight.getDirectionalLight();
-        lightAngle += 1.1f;
+        lightAngle += 0.1f;
         if (lightAngle > 90) {//落山
             directionalLight.setIntensity(0);
             if (lightAngle >= 270) {
@@ -171,8 +174,9 @@ public class GameDemo1Logic implements IGameLogic {
     @Override
     public void cleanup() {
         renderer.cleanUp();
-        for (GameItem gameItem : scene.getGameItems()) {
-            gameItem.getMesh().cleanUp();
+        Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
+        for (Mesh mesh : mapMeshes.keySet()) {
+            mesh.cleanUp();
         }
         hud.cleanUp();
     }

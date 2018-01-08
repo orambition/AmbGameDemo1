@@ -3,12 +3,15 @@ package Core.Engine.graph;
 //网格由点构成，点包含：位置坐标、纹理坐标、法线等信息
 //网格新增一个材质属性，纹理包含在其中，材质含有光反射等信息
 //一个obj模型文件就是对网格信息的描述文件
+
+import Core.Engine.GameItem;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.lwjgl.opengl.ARBVertexArrayObject.glBindVertexArray;
 import static org.lwjgl.opengl.ARBVertexArrayObject.glDeleteVertexArrays;
@@ -134,6 +137,27 @@ public class Mesh {
     }
     //通过控制vao中的数组，进行显示相应的信息
     public void render(){
+        initRender();
+        /*绘制图形，参数：
+         * 模式：指定渲染的原语，在此情况下的三角形。
+         * 计数：指定要呈现的元素的数目。
+         * 类型：指定索引数据中的值类型。
+         * 索引：指定应用于索引数据以开始呈现的偏移量。*/
+        glDrawElements(GL_TRIANGLES,getVertexCount(),GL_UNSIGNED_INT,0);
+        endRender();
+    }
+    //列表绘制，优化渲染性能，以mesh为单位进行渲染
+    public void renderList(List<GameItem> gameItems, Consumer<GameItem> consumer) {
+        initRender();
+        for (GameItem gameItem : gameItems) {
+            // java新特性，函数式编程，consumer为一个处理函数，accept为执行该处理函数
+            consumer.accept(gameItem);
+            // Render this game item
+            glDrawElements(GL_TRIANGLES, getVertexCount(), GL_UNSIGNED_INT, 0);
+        }
+        endRender();
+    }
+    private void initRender() {
         Texture texture = material.getTexture();
         if (texture != null){
             // 激活0号纹理单元
@@ -146,13 +170,8 @@ public class Mesh {
         glEnableVertexAttribArray(0);//启用数组1，对用位置
         glEnableVertexAttribArray(1);//启用数组2，对用纹理坐标
         glEnableVertexAttribArray(2);//启用数组2，对用顶点法线
-        /*绘制图形，参数：
-         * 模式：指定渲染的原语，在此情况下的三角形。
-         * 计数：指定要呈现的元素的数目。
-         * 类型：指定索引数据中的值类型。
-         * 索引：指定应用于索引数据以开始呈现的偏移量。*/
-        glDrawElements(GL_TRIANGLES,getVertexCount(),GL_UNSIGNED_INT,0);
-        // Restore state
+    }
+    private void endRender() {
         glDisableVertexAttribArray(0);//关闭数组1
         glDisableVertexAttribArray(1);//关闭数组2
         glDisableVertexAttribArray(2);//关闭数组3

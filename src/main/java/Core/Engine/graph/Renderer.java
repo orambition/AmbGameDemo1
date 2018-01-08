@@ -7,6 +7,9 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.lwjgl.opengl.GL11.*;
 
 public class Renderer {
@@ -102,6 +105,9 @@ public class Renderer {
             glViewport(0, 0, window.getWindowWidth(), window.getWindowHeight());
             window.setResized(false);
         }
+        //设置共享的投影矩阵和视野矩阵
+        transformation.updateProjectionMatrix(FOV, window.getWindowWidth(), window.getWindowHeight(), Z_NEAR, Z_FAR);
+        transformation.updateViewMatrix(camera);
 
         renderScene(window, camera, scene);
 
@@ -113,15 +119,16 @@ public class Renderer {
         skyBoxShaderProgram.bind();
 
         skyBoxShaderProgram.setUniform("texture_sampler",0);
-        Matrix4f projectionMatrix = transformation.getProjectionMatrix(FOV, window.getWindowWidth(), window.getWindowHeight(), Z_NEAR, Z_FAR);
+
+        Matrix4f projectionMatrix = transformation.getProjectionMatrix();
         skyBoxShaderProgram.setUniform("projectionMatrix", projectionMatrix);
         SkyBox skyBox = scene.getSkyBox();
-        Matrix4f viewMatrix = transformation.getViewMatrix(camera);
+        Matrix4f viewMatrix = transformation.getViewMatrix();
         //天空盒并不随着摄像机移动，所以将xyz的变化设置为0
-        //viewMatrix.m30 = 0;
-        //viewMatrix.m31 = 0;
-        //viewMatrix.m32 = 0;
-        Matrix4f modelViewMatrix = transformation.getModelViewMatrix(skyBox, viewMatrix);
+        viewMatrix.m30 = 0;
+        viewMatrix.m31 = 0;
+        viewMatrix.m32 = 0;
+        Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(skyBox, viewMatrix);
         skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
         skyBoxShaderProgram.setUniform("ambientLight", scene.getSceneLight().getAmbientLight());
         scene.getSkyBox().getMesh().render();
@@ -132,11 +139,11 @@ public class Renderer {
         sceneShaderProgram.bind();
 
         //透视矩阵，将三维坐标投影到二位屏幕上
-        Matrix4f projectionMatrix = transformation.getProjectionMatrix(FOV, window.getWindowWidth(), window.getWindowHeight(), Z_NEAR, Z_FAR);
+        Matrix4f projectionMatrix = transformation.getProjectionMatrix();
         sceneShaderProgram.setUniform("projectionMatrix",projectionMatrix);
 
         //视野矩阵,根据当前摄像机的位置和角度得到该矩阵，用于修正物体的显示坐标
-        Matrix4f viewMatrix = transformation.getViewMatrix(camera);
+        Matrix4f viewMatrix = transformation.getViewMatrix();
 
         //设置环境光、点光源数组、聚光灯数组、平行光和强度
         renderLights(viewMatrix, scene.getSceneLight());
@@ -145,15 +152,16 @@ public class Renderer {
         sceneShaderProgram.setUniform("texture_sampler", 0);
 
         //绘制每一个gameItem
-        for (GameItem gameItem : scene.getGameItems()){
-            Mesh mesh = gameItem.getMesh();
-            //设置该物体的模型视野矩阵；将物体的世界位置矩阵与视野矩阵相乘，因为视野会影响物体的显示坐标，所以需要进行改处理
-            Matrix4f modelViewMatrix  = transformation.getModelViewMatrix(gameItem,viewMatrix);
-            sceneShaderProgram.setUniform("modelViewMatrix",modelViewMatrix);
-            //设置该物体的材质
+        Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
+        for (Mesh mesh : mapMeshes.keySet()) {
             sceneShaderProgram.setUniform("material", mesh.getMaterial());
-            //绘制该物体的mesh
-            mesh.render();
+            mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
+                        Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(gameItem, viewMatrix);
+                        sceneShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
+                    }
+
+            );
+
         }
 
         sceneShaderProgram.unbind();
@@ -210,7 +218,7 @@ public class Renderer {
         for (GameItem gameItem : hud.getGameItems()) {
             Mesh mesh = gameItem.getMesh();
             // hud的投影矩阵
-            Matrix4f projModelMatrix = transformation.getOrtoProjModelMatrix(gameItem, ortho);
+            Matrix4f projModelMatrix = transformation.buildOrtoProjModelMatrix(gameItem, ortho);
             //Matrix4f projModelMatrix = transformation.getWorldMatrix(gameItem,projectionMatrix);
             hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
             hudShaderProgram.setUniform("colour", gameItem.getMesh().getMaterial().getAmbientColour());

@@ -89,6 +89,9 @@ public class Window {
         // 支持透明，首次添加于创建hud
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //启用 面剔除，并设置back为删除的规则，不渲染看不到的面，
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
     }
     public long getWindowHandle() {
         return windowHandle;

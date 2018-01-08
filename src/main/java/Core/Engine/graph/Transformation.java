@@ -11,11 +11,11 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 public class Transformation {
-
-    private final Matrix4f projectionMatrix;
-    private final Matrix4f modelViewMatrix;
-    private final Matrix4f viewMatrix;
-    private final Matrix4f orthoMatrix;
+    //优化，将透视矩阵和视野矩阵的get函数改为get+update函数的方式，这样多个item可以共用一个矩阵，而不是每次都新建一个
+    private final Matrix4f projectionMatrix;//透视矩阵
+    private final Matrix4f modelViewMatrix;//模型X视野矩阵
+    private final Matrix4f viewMatrix;//视野矩阵
+    private final Matrix4f orthoMatrix;//正交矩阵
 
     public Transformation() {
         modelViewMatrix = new Matrix4f();
@@ -23,8 +23,12 @@ public class Transformation {
         viewMatrix = new Matrix4f();
         orthoMatrix = new Matrix4f();
     }
+
     //透视矩阵。将三维坐标近大远小的投影到二位屏幕上
-    public final Matrix4f getProjectionMatrix(float fov, float width, float height, float zNear, float zFar) {
+    public Matrix4f getProjectionMatrix() {
+        return projectionMatrix;
+    }
+    public final Matrix4f updateProjectionMatrix(float fov, float width, float height, float zNear, float zFar) {
         float aspectRatio = width / height;
         projectionMatrix.identity();
         projectionMatrix.perspective(fov, aspectRatio, zNear, zFar);
@@ -36,8 +40,12 @@ public class Transformation {
         orthoMatrix.setOrtho2D(left, right, bottom, top);
         return orthoMatrix;
     }
+
     // 视野矩阵,根据当前摄像机的位置和角度得到该矩阵，用于修正物体的显示坐标
-    public Matrix4f getViewMatrix(Camera camera) {
+    public Matrix4f getViewMatrix() {
+        return viewMatrix;
+    }
+    public Matrix4f updateViewMatrix(Camera camera) {
         Vector3f cameraPos = camera.getPosition();
         Vector3f rotation = camera.getRotation();
 
@@ -51,7 +59,7 @@ public class Transformation {
     }
 
     //将物体的位置矩阵与视野矩阵相乘，因为视野会影响物体的显示坐标，所以需要进行改处理
-    public Matrix4f getModelViewMatrix(GameItem gameItem, Matrix4f viewMatrix) {
+    public Matrix4f buildModelViewMatrix(GameItem gameItem, Matrix4f viewMatrix) {
         Vector3f rotation = gameItem.getRotation();
         modelViewMatrix.identity().translate(gameItem.getPosition()).
                 rotateX((float)Math.toRadians(-rotation.x)).
@@ -63,7 +71,7 @@ public class Transformation {
         return viewCurr.mul(modelViewMatrix);
     }
     //用于获取hud的投影矩阵
-    public Matrix4f getOrtoProjModelMatrix(GameItem gameItem, Matrix4f orthoMatrix) {
+    public Matrix4f buildOrtoProjModelMatrix(GameItem gameItem, Matrix4f orthoMatrix) {
         Vector3f rotation = gameItem.getRotation();
         Matrix4f modelMatrix = new Matrix4f();
         modelMatrix.identity().translate(gameItem.getPosition()).
@@ -74,18 +82,5 @@ public class Transformation {
         Matrix4f orthoMatrixCurr = new Matrix4f(orthoMatrix);
         orthoMatrixCurr.mul(modelMatrix);
         return orthoMatrixCurr;
-    }
-    //获取世界矩阵
-    public Matrix4f getWorldMatrix(GameItem gameItem,Matrix4f projectionMatrix) {
-        Vector3f rotation = gameItem.getRotation();
-        Matrix4f worldMatrix = new Matrix4f();
-        worldMatrix.identity().translate(gameItem.getPosition()).
-                rotateX((float)Math.toRadians(rotation.x)).
-                rotateY((float)Math.toRadians(rotation.y)).
-                rotateZ((float)Math.toRadians(rotation.z)).
-                scale(gameItem.getScale());
-        Matrix4f projectMatrixCurr = new Matrix4f(projectionMatrix);
-        projectMatrixCurr.mul(worldMatrix);
-        return projectMatrixCurr;
     }
 }
