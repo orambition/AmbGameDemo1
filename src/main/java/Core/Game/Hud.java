@@ -30,10 +30,10 @@ public class Hud implements IHud{
         // 加载罗盘
         Mesh mesh = OBJLoader.loadMesh("/models/compass.obj");
         Material material = new Material();
-        material.setAmbientColour(new Vector4f(1, 0, 0, 1));
+        material.setAmbientColour(new Vector4f(1, 1, 0, 1));
         mesh.setMaterial(material);
         compassItem = new GameItem(mesh);
-        compassItem.setScale(40f);
+        compassItem.setScale(40.0f);
         // 修正罗盘角度
         compassItem.setRotation(0f, 0f, 180f);
 
@@ -49,7 +49,7 @@ public class Hud implements IHud{
     public GameItem[] getGameItems() {
         return gameItems;
     }
-    public void updateSize(Window window, Camera camera) {
+    public void updateSize(Window window) {
         this.statusTextItem.setPosition(10f, window.getWindowHeight() - 50f, 0);
         this.compassItem.setPosition(window.getWindowWidth() - 40f, 50f, 0);
         //this.statusTextItem.setPosition(-10, -7, -15f);

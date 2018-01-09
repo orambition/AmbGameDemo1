@@ -5,6 +5,7 @@ import Core.Engine.graph.*;
 import Core.Engine.graph.lights.DirectionalLight;
 import Core.Engine.items.GameItem;
 import Core.Engine.items.SkyBox;
+import Core.Engine.items.Terrain;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -28,6 +29,8 @@ public class GameDemo1Logic implements IGameLogic {
 
     private float lightAngle;//平行光角度、方向
 
+    private Terrain terrain;//地形
+
     public GameDemo1Logic(){
         renderer = new Renderer();
         camera = new Camera();
@@ -41,45 +44,18 @@ public class GameDemo1Logic implements IGameLogic {
         renderer.init(window);
         //创建场景
         scene = new Scene();
-        //材质的反射率
-        float reflectance = 1f;
 
-        //创建方块物体的mesh
-        Mesh mesh = OBJLoader.loadMesh("/models/cube.obj");
-        Texture texture = new Texture("/textures/texture1.png");
-        Material material = new Material(texture, reflectance);
-        mesh.setMaterial(material);
-
-        float blockScale = 0.25f;
-        float skyBoxScale = 50.0f;
-        float extension = 2.0f;
-
-        float startx = extension * (-skyBoxScale + blockScale);
-        float startz = extension * (skyBoxScale - blockScale);
-        float starty = -1.0f;
-        float inc = blockScale * 2;
-
-        float posx = startx;
-        float posz = startz;
-        float incy = 0.0f;
-        int NUM_ROWS = (int)(extension * skyBoxScale * 2 / inc);
-        int NUM_COLS = (int)(extension * skyBoxScale * 2/ inc);
-        GameItem[] gameItems  = new GameItem[NUM_ROWS * NUM_COLS];
-        for(int i=0; i<NUM_ROWS; i++) {
-            for(int j=0; j<NUM_COLS; j++) {
-                GameItem gameItem = new GameItem(mesh);
-                gameItem.setScale(blockScale);
-                incy = Math.random() > 0.9f ? blockScale * 2 : 0f;
-                gameItem.setPosition(posx, starty + incy, posz);
-                gameItems[i*NUM_COLS + j] = gameItem;
-                posx += inc;
-            }
-            posx = startx;
-            posz -= inc;
-        }
-        scene.setGameItems(gameItems);
+        //创建地形
+        float terrainScale = 10;//地形的缩放
+        int terrainSize = 3;
+        float minY = -0.1f;
+        float maxY = 0.01f;
+        int textInc = 1;
+        terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "/textures/texture1.png", "/textures/texture1.png", textInc);
+        scene.setGameItems(terrain.getGameItems());
 
         // 初始化天空盒
+        float skyBoxScale = 30.0f;//天空盒的缩放
         SkyBox skyBox = new SkyBox("/models/skybox.obj","/textures/skybox.png");
         skyBox.setScale(skyBoxScale);
         scene.setSkyBox(skyBox);
@@ -92,9 +68,9 @@ public class GameDemo1Logic implements IGameLogic {
 
         //camera.setPosition(0,10,0);
         //设置相机的位置
-        camera.getPosition().x = 0.65f;
-        camera.getPosition().y = -0.1f;
-        camera.getPosition().z = 4.34f;
+        camera.getPosition().x = 0f;
+        camera.getPosition().y = 0f;
+        camera.getPosition().z = 0f;
     }
     private void setupLights() {
         SceneLight sceneLight = new SceneLight();
@@ -120,9 +96,9 @@ public class GameDemo1Logic implements IGameLogic {
             cameraInc.x = 1;
         }
         if (window.isKeyPressed(GLFW_KEY_SPACE)){
-            cameraInc.y = 1;
+            cameraInc.y = 5;
         } else if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL)){
-            cameraInc.y = -1;
+            cameraInc.y = -0.01f;
         }
     }
 
@@ -136,8 +112,17 @@ public class GameDemo1Logic implements IGameLogic {
             hud.rotateCompass(camera.getRotation().y);
         }
         // 更改相机的位置
+        //保存现在的位置，然后移动，如果碰撞了就恢复现在的位置。
+        //
+        Vector3f prevPos = new Vector3f(camera.getPosition());
         camera.movePosition(cameraInc.x * CAMERA_POS_STEP, cameraInc.y * CAMERA_POS_STEP, cameraInc.z * CAMERA_POS_STEP);
-
+        //检测碰撞
+        float height = terrain.getHeight(camera.getPosition())+0.1f;
+        if ( camera.getPosition().y < height )  {
+            camera.setPosition(prevPos.x, height, prevPos.z);
+        }else if ( camera.getPosition().y > height )  {
+            camera.movePosition(0,-2*CAMERA_POS_STEP,0);
+        }
         //更新场景灯光
         SceneLight sceneLight = scene.getSceneLight();
         //更新平行光的角度，模拟太阳
@@ -170,7 +155,7 @@ public class GameDemo1Logic implements IGameLogic {
 
     @Override
     public void render(Window window) {
-        hud.updateSize(window,camera);
+        hud.updateSize(window);
         renderer.render(window,camera,scene,hud);
     }
 

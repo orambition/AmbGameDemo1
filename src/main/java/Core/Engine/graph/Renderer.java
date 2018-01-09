@@ -166,9 +166,7 @@ public class Renderer {
                     }
 
             );
-
         }
-
         sceneShaderProgram.unbind();
     }
     //绘制光的函数，就是把相应的uniform填冲上相应的值
@@ -235,6 +233,9 @@ public class Renderer {
     }
     //
     public void cleanUp(){
+        if (skyBoxShaderProgram != null) {
+            skyBoxShaderProgram.cleanUp();
+        }
         if (sceneShaderProgram != null)
             sceneShaderProgram.cleanUp();
 
