@@ -85,6 +85,8 @@ public class Renderer {
         sceneShaderProgram.createPointLightListUniform("pointLights", MAX_POINT_LIGHTS);
         sceneShaderProgram.createSpotLightListUniform("spotLights", MAX_SPOT_LIGHTS);
         sceneShaderProgram.createDirectionalLightUniform("directionalLight");
+        //创建雾uniform
+        sceneShaderProgram.createFogUniform("fog");
     }
     //创建hud着色器
     private void setupHudShader() throws Exception {
@@ -156,6 +158,8 @@ public class Renderer {
         //设置纹理单元，为显存中的0号纹理单元，将纹理放入0号单元的操作由Mesh建立时完成
         sceneShaderProgram.setUniform("texture_sampler", 0);
 
+        //设置雾的uniform
+        sceneShaderProgram.setUniform("fog", scene.getFog());
         //绘制每一个gameItem
         Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
         for (Mesh mesh : mapMeshes.keySet()) {

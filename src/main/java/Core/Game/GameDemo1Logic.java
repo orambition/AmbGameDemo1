@@ -1,8 +1,11 @@
 package Core.Game;
 
 import Core.Engine.*;
-import Core.Engine.graph.*;
+import Core.Engine.graph.Camera;
+import Core.Engine.graph.Mesh;
+import Core.Engine.graph.Renderer;
 import Core.Engine.graph.lights.DirectionalLight;
+import Core.Engine.graph.weather.Fog;
 import Core.Engine.items.GameItem;
 import Core.Engine.items.SkyBox;
 import Core.Engine.items.Terrain;
@@ -46,13 +49,16 @@ public class GameDemo1Logic implements IGameLogic {
         scene = new Scene();
 
         //创建地形
-        float terrainScale = 10;//地形的缩放
+        float terrainScale = 30;//地形的缩放
         int terrainSize = 3;
         float minY = -0.1f;
-        float maxY = 0.01f;
+        float maxY = 0.0f;
         int textInc = 1;
         terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "/textures/texture1.png", "/textures/texture1.png", textInc);
         scene.setGameItems(terrain.getGameItems());
+
+        //开启雾
+        scene.setFog(new Fog(true, new Vector3f(0.5f, 0.5f, 0.5f), 0.10f));
 
         // 初始化天空盒
         float skyBoxScale = 30.0f;//天空盒的缩放

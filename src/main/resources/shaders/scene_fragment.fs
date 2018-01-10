@@ -42,6 +42,13 @@ struct Material{
     int hasTexture;
     float reflectance;
 };
+//雾
+struct Fog{
+    int activeFog;//是否启用
+    vec3 colour;//颜色
+    float density;//密度
+};
+
 uniform sampler2D texture_sampler;
 uniform vec3 ambientLight;//环境光，以相同的方式影响每一个面
 uniform float specularPower;//镜面反射率
@@ -50,6 +57,8 @@ uniform Material material;//材质
 uniform PointLight pointLights[MAX_POINT_LIGHTS];//点光源
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];//聚光灯
 uniform DirectionalLight directionalLight;//平行光源
+
+uniform Fog fog;//雾
 
 //全局变量
 vec4 ambientC;
@@ -113,6 +122,16 @@ vec4 calcSpotLight(SpotLight light, vec3 position, vec3 normal){
 vec4 calcDirectionalLight(DirectionalLight light, vec3 position, vec3 normal){
     return calcLightColour(light.colour, light.intensity, position, normalize(light.direction), normal);
 }
+//计算雾对颜色的影响
+vec4 calcFog(vec3 pos, vec4 colour, Fog fog, vec3 ambientLight, DirectionalLight dirLight){
+    vec3 fogColor = fog.colour * (ambientLight + dirLight.colour * dirLight.intensity);
+    float distance = length(pos);
+    float fogFactor = 1.0 / exp( (distance * fog.density)* (distance * fog.density));
+    fogFactor = clamp( fogFactor, 0.0, 1.0 );
+    vec3 resultColour = mix(fogColor, colour.xyz, fogFactor);
+    return vec4(resultColour.xyz, colour.w);
+}
+
 void main(){
     setupColours(material, outTexCoord);
 
@@ -128,4 +147,7 @@ void main(){
         }
     }
     fragColor = ambientC * vec4(ambientLight, 1) + diffuseSpecularComp;
+    if ( fog.activeFog == 1 ){
+        fragColor = calcFog(mvVertexPos, fragColor, fog, ambientLight, directionalLight);
+    }
 }

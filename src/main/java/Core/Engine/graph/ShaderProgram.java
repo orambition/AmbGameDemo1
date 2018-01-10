@@ -6,6 +6,7 @@ package Core.Engine.graph;
 import Core.Engine.graph.lights.DirectionalLight;
 import Core.Engine.graph.lights.PointLight;
 import Core.Engine.graph.lights.SpotLight;
+import Core.Engine.graph.weather.Fog;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -89,6 +90,13 @@ public class ShaderProgram {
         createUniform(uniformName + ".hasTexture");
         createUniform(uniformName + ".reflectance");
     }
+    //创建雾uniform
+    public void createFogUniform(String uniformName)throws Exception{
+        createUniform(uniformName + ".activeFog");
+        createUniform(uniformName + ".colour");
+        createUniform(uniformName + ".density");
+    }
+
 
     //设置值为矩阵的Uniform
     public void setUniform(String uniformName, Matrix4f value) {
@@ -165,7 +173,12 @@ public class ShaderProgram {
         setUniform(uniformName + ".hasTexture", material.isTextured() ? 1 : 0);
         setUniform(uniformName + ".reflectance", material.getReflectance());
     }
-
+    //设置雾的uniform
+    public void setUniform(String uniformName, Fog fog) {
+        setUniform(uniformName + ".activeFog", fog.isActive() ? 1 : 0);
+        setUniform(uniformName + ".colour", fog.getColour());
+        setUniform(uniformName + ".density", fog.getDensity());
+    }
     //创建点着色器
     public void createVertexShader(String shaderCode)throws Exception{
         vertexShaderId = createShader(shaderCode,GL_VERTEX_SHADER);

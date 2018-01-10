@@ -1,6 +1,7 @@
 package Core.Engine;
 
 import Core.Engine.graph.Mesh;
+import Core.Engine.graph.weather.Fog;
 import Core.Engine.items.GameItem;
 import Core.Engine.items.SkyBox;
 
@@ -15,8 +16,10 @@ public class Scene {
     private Map<Mesh,List<GameItem>> meshMap;//根据mesh存储gameitem，目的是优化渲染过程，不用每次都加载相同的mesh
     private SkyBox skyBox;
     private SceneLight sceneLight;
+    private Fog fog;
     public Scene(){
         meshMap = new HashMap();
+        fog = Fog.NOFOG;//场景都有雾，但默认雾是不开启的，有是因为着色器需要这个参数
     }
     public Map<Mesh, List<GameItem>> getGameMeshes() {
         return meshMap;
@@ -45,5 +48,11 @@ public class Scene {
     }
     public void setSceneLight(SceneLight sceneLight) {
         this.sceneLight = sceneLight;
+    }
+    public Fog getFog() {
+        return fog;
+    }
+    public void setFog(Fog fog) {
+        this.fog = fog;
     }
 }
