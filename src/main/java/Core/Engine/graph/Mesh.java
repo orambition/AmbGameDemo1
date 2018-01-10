@@ -17,6 +17,7 @@ import static org.lwjgl.opengl.ARBVertexArrayObject.glBindVertexArray;
 import static org.lwjgl.opengl.ARBVertexArrayObject.glDeleteVertexArrays;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE1;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
@@ -36,9 +37,7 @@ public class Mesh {
     private final List<Integer> vboIdList;
 
     private final int vertexCount;//顶点数量
-    /*private Texture texture;//纹理
-    private Vector3f colour;
-    private static final Vector3f DEFAULT_COLOUR = new Vector3f(1.0f, 1.0f, 1.0f);*/
+
     private Material material;//材质
 
     //将传进来的数据，位置坐标、纹理坐标、顶点法线、顺序等vbo,通过缓存存入vao（显存？）
@@ -164,6 +163,12 @@ public class Mesh {
             glActiveTexture(GL_TEXTURE0);
             // 加载纹理。将传进来的纹理与其绑定
             glBindTexture(GL_TEXTURE_2D, texture.getId());
+        }
+        //法线纹理
+        Texture normalMap = material.getNormalMap();
+        if (normalMap != null){
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, normalMap.getId());
         }
         // Bind to the VAO
         glBindVertexArray(getVaoId());

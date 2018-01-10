@@ -1,8 +1,7 @@
 package Core.Engine.graph;
-
+//材质类，用于存储材质所需的数据，添加光时所创建的类
 import org.joml.Vector4f;
 
-//材质类，用于存储材质所需的数据，添加光时所创建的类
 public class Material {
     //默认的颜色
     private static final Vector4f DEFAULT_COLOUR = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -16,6 +15,8 @@ public class Material {
     private float reflectance;
     //纹理
     private Texture texture;
+    //法线纹理
+    private Texture normalMap;//非必要，所以使用前需要判断是否存在
 
     //各种构造函数
     public Material() {
@@ -74,5 +75,14 @@ public class Material {
     }
     public void setTexture(Texture texture) {
         this.texture = texture;
+    }
+    public boolean hasNormalMap() {
+        return this.normalMap != null;
+    }
+    public Texture getNormalMap() {
+        return normalMap;
+    }
+    public void setNormalMap(Texture normalMap) {
+        this.normalMap = normalMap;
     }
 }

@@ -87,6 +87,8 @@ public class Renderer {
         sceneShaderProgram.createDirectionalLightUniform("directionalLight");
         //创建雾uniform
         sceneShaderProgram.createFogUniform("fog");
+        //创建法线纹理uniform
+        sceneShaderProgram.createUniform("normalMap");
     }
     //创建hud着色器
     private void setupHudShader() throws Exception {
@@ -160,6 +162,9 @@ public class Renderer {
 
         //设置雾的uniform
         sceneShaderProgram.setUniform("fog", scene.getFog());
+
+        //设置法线纹理单元，为显存中的1号法线纹理单元，将法线纹理放入1号单元的操作由Mesh建立时完成
+        sceneShaderProgram.setUniform("normalMap", 1);
         //绘制每一个gameItem
         Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
         for (Mesh mesh : mapMeshes.keySet()) {

@@ -6,6 +6,7 @@ const int MAX_SPOT_LIGHTS = 5;
 in vec2 outTexCoord;
 in vec3 mvVertexNormal;
 in vec3 mvVertexPos;
+in mat4 outModelViewMatrix;//因为点的法线是跟世界坐标变化的，所以需要该矩阵
 
 out vec4 fragColor;
 //衰减
@@ -39,8 +40,9 @@ struct Material{
     vec4 ambient;//颜色的环境光成分
     vec4 diffuse;//漫反射成分
     vec4 specular;//镜面反射成分
-    int hasTexture;
-    float reflectance;
+    int hasTexture;//是否有纹理
+    int hasNormalMap;//是否有法线纹理
+    float reflectance;//反射率
 };
 //雾
 struct Fog{
@@ -49,7 +51,8 @@ struct Fog{
     float density;//密度
 };
 
-uniform sampler2D texture_sampler;
+uniform sampler2D texture_sampler;//纹理
+uniform sampler2D normalMap;//法线纹理
 uniform vec3 ambientLight;//环境光，以相同的方式影响每一个面
 uniform float specularPower;//镜面反射率
 uniform Material material;//材质
@@ -131,19 +134,31 @@ vec4 calcFog(vec3 pos, vec4 colour, Fog fog, vec3 ambientLight, DirectionalLight
     vec3 resultColour = mix(fogColor, colour.xyz, fogFactor);
     return vec4(resultColour.xyz, colour.w);
 }
+//转换法线纹理，材质、顶点法线、纹理坐标、模型视图矩阵。
+vec3 calcNormal(Material material, vec3 normal, vec2 text_coord, mat4 modelViewMatrix){
+    vec3 newNormal = normal;
+    if ( material.hasNormalMap == 1 ){
+        newNormal = texture(normalMap, text_coord).rgb;
+        newNormal = normalize(newNormal * 2 - 1);
+        newNormal = normalize(modelViewMatrix * vec4(newNormal, 0.0)).xyz;
+    }
+    return newNormal;
+}
 
 void main(){
     setupColours(material, outTexCoord);
 
-    vec4 diffuseSpecularComp = calcDirectionalLight(directionalLight, mvVertexPos, mvVertexNormal);
+    vec3 currNomal = calcNormal(material, mvVertexNormal, outTexCoord, outModelViewMatrix);
+
+    vec4 diffuseSpecularComp = calcDirectionalLight(directionalLight, mvVertexPos, currNomal);
     for (int i=0; i<MAX_POINT_LIGHTS; i++){
         if ( pointLights[i].intensity > 0 ){
-            diffuseSpecularComp += calcPointLight(pointLights[i], mvVertexPos, mvVertexNormal);
+            diffuseSpecularComp += calcPointLight(pointLights[i], mvVertexPos, currNomal);
         }
     }
     for (int i=0; i<MAX_SPOT_LIGHTS; i++){
         if ( spotLights[i].pl.intensity > 0 ){
-            diffuseSpecularComp += calcSpotLight(spotLights[i], mvVertexPos, mvVertexNormal);
+            diffuseSpecularComp += calcSpotLight(spotLights[i], mvVertexPos, currNomal);
         }
     }
     fragColor = ambientC * vec4(ambientLight, 1) + diffuseSpecularComp;

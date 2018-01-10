@@ -1,9 +1,7 @@
 package Core.Game;
 
 import Core.Engine.*;
-import Core.Engine.graph.Camera;
-import Core.Engine.graph.Mesh;
-import Core.Engine.graph.Renderer;
+import Core.Engine.graph.*;
 import Core.Engine.graph.lights.DirectionalLight;
 import Core.Engine.graph.weather.Fog;
 import Core.Engine.items.GameItem;
@@ -48,6 +46,21 @@ public class GameDemo1Logic implements IGameLogic {
         //创建场景
         scene = new Scene();
 
+        //创建物体
+        float reflectance = 0.65f;
+        Texture normalMap = new Texture("/textures/texture1_NORM.png");
+        Mesh quadMesh1 = OBJLoader.loadMesh("/models/cube.obj");
+
+        Texture texture = new Texture("/textures/texture1.png");
+        Material quadMaterial1 = new Material(texture,reflectance);
+
+        quadMaterial1.setNormalMap(normalMap);
+        quadMesh1.setMaterial(quadMaterial1);
+        GameItem quadGameItem1 = new GameItem(quadMesh1);
+        quadGameItem1.setPosition(0f, 0f, -1f);
+        quadGameItem1.setScale(0.1f);
+
+
         //创建地形
         float terrainScale = 30;//地形的缩放
         int terrainSize = 3;
@@ -55,10 +68,16 @@ public class GameDemo1Logic implements IGameLogic {
         float maxY = 0.0f;
         int textInc = 1;
         terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "/textures/texture1.png", "/textures/texture1.png", textInc);
-        scene.setGameItems(terrain.getGameItems());
+        GameItem[] temp = terrain.getGameItems();
+        GameItem[] gameItems = new GameItem[temp.length+1];
+
+        System.arraycopy(temp,0,gameItems,0,temp.length);
+        gameItems[temp.length] = quadGameItem1;
+
+        scene.setGameItems(gameItems);
 
         //开启雾
-        scene.setFog(new Fog(true, new Vector3f(0.5f, 0.5f, 0.5f), 0.10f));
+        scene.setFog(new Fog(true, new Vector3f(0.5f, 0.5f, 0.5f), 0.05f));
 
         // 初始化天空盒
         float skyBoxScale = 30.0f;//天空盒的缩放
@@ -104,7 +123,7 @@ public class GameDemo1Logic implements IGameLogic {
         if (window.isKeyPressed(GLFW_KEY_SPACE)){
             cameraInc.y = 5;
         } else if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL)){
-            cameraInc.y = -0.01f;
+            cameraInc.y = -0.1f;
         }
     }
 
@@ -127,7 +146,7 @@ public class GameDemo1Logic implements IGameLogic {
         if ( camera.getPosition().y < height )  {
             camera.setPosition(prevPos.x, height, prevPos.z);
         }else if ( camera.getPosition().y > height )  {
-            camera.movePosition(0,-2*CAMERA_POS_STEP,0);
+            //camera.movePosition(0,-2*CAMERA_POS_STEP,0);
         }
         //更新场景灯光
         SceneLight sceneLight = scene.getSceneLight();
