@@ -18,7 +18,7 @@ import static org.lwjgl.glfw.GLFW.*;
 public class GameDemo1Logic implements IGameLogic {
 
     private static final float MOUSE_SENSITIVITY = 0.2f;//鼠标敏感度
-    private static final float CAMERA_POS_STEP = 0.05f;//视角移动步长
+    private static float CAMERA_POS_STEP = 0.05f;//视角移动步长
 
     private final Camera camera;//摄像机，视野
     private final Vector3f cameraInc;//视野移动变量
@@ -57,17 +57,17 @@ public class GameDemo1Logic implements IGameLogic {
         quadMaterial1.setNormalMap(normalMap);
         quadMesh1.setMaterial(quadMaterial1);
         GameItem quadGameItem1 = new GameItem(quadMesh1);
-        quadGameItem1.setPosition(0f, 0f, -1f);
-        quadGameItem1.setScale(0.1f);
+        quadGameItem1.setPosition(0f, -4f, -3f);
+        quadGameItem1.setScale(0.5f);
 
 
         //创建地形
         float terrainScale = 30;//地形的缩放
         int terrainSize = 3;
-        float minY = -0.1f;
+        float minY = -0.2f;
         float maxY = 0.0f;
         int textInc = 1;
-        terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "/textures/texture1.png", "/textures/texture1.png", textInc);
+        terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "/textures/map_height.png", "/textures/map_texture.png", textInc);
         GameItem[] temp = terrain.getGameItems();
         GameItem[] gameItems = new GameItem[temp.length+1];
 
@@ -77,11 +77,11 @@ public class GameDemo1Logic implements IGameLogic {
         scene.setGameItems(gameItems);
 
         //开启雾
-        scene.setFog(new Fog(true, new Vector3f(0.5f, 0.5f, 0.5f), 0.05f));
+        scene.setFog(new Fog(true, new Vector3f(0.3f, 0.3f, 0.3f), 0.1f));
 
         // 初始化天空盒
-        float skyBoxScale = 30.0f;//天空盒的缩放
-        SkyBox skyBox = new SkyBox("/models/skybox.obj","/textures/skybox.png");
+        float skyBoxScale = 60.0f;//天空盒的缩放
+        SkyBox skyBox = new SkyBox("/models/skybox.obj","/textures/skybox1.png");
         skyBox.setScale(skyBoxScale);
         scene.setSkyBox(skyBox);
 
@@ -94,7 +94,7 @@ public class GameDemo1Logic implements IGameLogic {
         //camera.setPosition(0,10,0);
         //设置相机的位置
         camera.getPosition().x = 0f;
-        camera.getPosition().y = 0f;
+        camera.getPosition().y = -4f;
         camera.getPosition().z = 0f;
     }
     private void setupLights() {
@@ -103,7 +103,7 @@ public class GameDemo1Logic implements IGameLogic {
         // 环境光
         sceneLight.setAmbientLight(new Vector3f(1.0f, 1.0f, 1.0f));
         // 平行光
-        float lightIntensity = 1.0f;
+        float lightIntensity = 0.1f;
         Vector3f lightPosition = new Vector3f(-1, 0, 0);
         sceneLight.setDirectionalLight(new DirectionalLight(new Vector3f(1, 1, 1), lightPosition, lightIntensity));
     }
@@ -121,9 +121,14 @@ public class GameDemo1Logic implements IGameLogic {
             cameraInc.x = 1;
         }
         if (window.isKeyPressed(GLFW_KEY_SPACE)){
-            cameraInc.y = 5;
+            cameraInc.y = 1;
         } else if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL)){
-            cameraInc.y = -0.1f;
+            cameraInc.y = -1f;
+        }
+        if(window.isKeyPressed(GLFW_KEY_LEFT_SHIFT)){
+            CAMERA_POS_STEP = 1f;
+        }else {
+            CAMERA_POS_STEP = 0.05f;
         }
     }
 
@@ -143,11 +148,14 @@ public class GameDemo1Logic implements IGameLogic {
         camera.movePosition(cameraInc.x * CAMERA_POS_STEP, cameraInc.y * CAMERA_POS_STEP, cameraInc.z * CAMERA_POS_STEP);
         //检测碰撞
         float height = terrain.getHeight(camera.getPosition())+0.1f;
+        hud.setStatusText(String.valueOf(height)+"  P="+camera.getPosition().y);
+
         if ( camera.getPosition().y < height )  {
             camera.setPosition(prevPos.x, height, prevPos.z);
         }else if ( camera.getPosition().y > height )  {
             //camera.movePosition(0,-2*CAMERA_POS_STEP,0);
         }
+
         //更新场景灯光
         SceneLight sceneLight = scene.getSceneLight();
         //更新平行光的角度，模拟太阳
@@ -159,7 +167,7 @@ public class GameDemo1Logic implements IGameLogic {
                 lightAngle = -90;
             }
             //更新环境光，控制亮度
-            sceneLight.getAmbientLight().set(0.3f, 0.3f, 0.4f);
+            //sceneLight.getAmbientLight().set(0.3f, 0.3f, 0.4f);
         } else if (lightAngle <= -80 || lightAngle >= 80) {//日出日落
             float factor = 1 - (float) (Math.abs(lightAngle) - 80) / 10.0f;
             sceneLight.getAmbientLight().set(factor, factor, factor);

@@ -85,13 +85,13 @@ public class Terrain {
 
     //获取输入点的高度
     public float getHeight(Vector3f position) {
-        float result = Float.MIN_VALUE;
+        float result = -Float.MAX_VALUE;
+
+        boolean found = false;
         // For each terrain block we get the bounding box, translate it to view coodinates
         // and check if the position is contained in that bounding box
         Box2D boundingBox = null;
-        boolean found = false;
         GameItem terrainBlock = null;
-        //查找点在哪个块内
         for (int row = 0; row < terrainSize && !found; row++) {
             for (int col = 0; col < terrainSize && !found; col++) {
                 terrainBlock = gameItems[row * terrainSize + col];
