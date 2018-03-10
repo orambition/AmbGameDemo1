@@ -20,7 +20,7 @@ public class Utils {
         }
         return result;
     }
-    //从指定位置读出所有行，用于读取obj模型
+    //从指定位置读出所有行，用于读取obj、md5等模型
     public static List<String> readAllLines(String fileName) throws Exception {
         List<String> list = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(Class.forName(Utils.class.getName()).getResourceAsStream(fileName)))) {
@@ -39,5 +39,15 @@ public class Utils {
             floatArr[i] = list.get(i);
         }
         return floatArr;
+    }
+    //检查文件是否存在
+    public static boolean existsResourceFile(String fileName) {
+        boolean result;
+        try (InputStream is = Utils.class.getResourceAsStream(fileName ) ) {
+            result = is != null;
+        } catch (Exception excp) {
+            result = false;
+        }
+        return result;
     }
 }

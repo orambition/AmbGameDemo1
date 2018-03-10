@@ -7,8 +7,12 @@ import Core.Engine.graph.weather.Fog;
 import Core.Engine.items.GameItem;
 import Core.Engine.items.SkyBox;
 import Core.Engine.items.Terrain;
+import Core.Engine.loaders.md5.MD5Loader;
+import Core.Engine.loaders.md5.MD5Model;
+import Core.Engine.loaders.obj.OBJLoader;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.util.List;
 import java.util.Map;
@@ -46,7 +50,17 @@ public class GameDemo1Logic implements IGameLogic {
         //创建场景
         scene = new Scene();
 
-        //创建物体
+        //创建地形
+        float terrainScale = 30;//地形的缩放
+        int terrainSize = 3;
+        float minY = -0.2f;
+        float maxY = 0.0f;
+        int textInc = 1;
+        terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "/textures/map_height.png", "/textures/map_texture.png", textInc);
+        GameItem[] temp = terrain.getGameItems();
+
+        /**示例代码 - 开始*/
+        //创建物体 方块
         float reflectance = 0.65f;
         Texture normalMap = new Texture("/textures/texture1_NORM.png");
         Mesh quadMesh1 = OBJLoader.loadMesh("/models/cube.obj");
@@ -56,24 +70,23 @@ public class GameDemo1Logic implements IGameLogic {
 
         quadMaterial1.setNormalMap(normalMap);
         quadMesh1.setMaterial(quadMaterial1);
+
         GameItem quadGameItem1 = new GameItem(quadMesh1);
         quadGameItem1.setPosition(0f, -4f, -3f);
         quadGameItem1.setScale(0.5f);
 
+        //加载md5
+        MD5Model md5Model = MD5Model.parse("/models/test.md5mesh");
+        GameItem demo4GameItem = MD5Loader.process(md5Model,new Vector4f(1,1,1,1));
+        demo4GameItem.setScale(0.1f);
+        demo4GameItem.setRotation(90,0,0);
+        /**示例代码 - 结束*/
 
-        //创建地形
-        float terrainScale = 30;//地形的缩放
-        int terrainSize = 3;
-        float minY = -0.2f;
-        float maxY = 0.0f;
-        int textInc = 1;
-        terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "/textures/map_height.png", "/textures/map_texture.png", textInc);
-        GameItem[] temp = terrain.getGameItems();
-        GameItem[] gameItems = new GameItem[temp.length+1];
-
+        //加载物体
+        GameItem[] gameItems = new GameItem[temp.length+2];
         System.arraycopy(temp,0,gameItems,0,temp.length);
         gameItems[temp.length] = quadGameItem1;
-
+        gameItems[temp.length+1] = demo4GameItem;
         scene.setGameItems(gameItems);
 
         //开启雾

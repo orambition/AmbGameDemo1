@@ -17,13 +17,15 @@ public class Window {
 
     private boolean vSync;//垂直同步
     private boolean resized;//允许调整窗口大小
+    private WindowOptions opts;//窗口设置内部类
 
-    public Window(String windowTitle, int width, int height, boolean vSync){
+    public Window(String windowTitle, int width, int height, boolean vSync,WindowOptions opts){
         this.windowTitle = windowTitle;
         this.windowWidth = width;
         this.windowHeight = height;
         this.vSync = vSync;
         this.resized = false;
+        this.opts = opts;
     }
     //初始化
     public void init(){
@@ -41,7 +43,17 @@ public class Window {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-        // Create the window
+        boolean maximized = false;
+        // 如果没有宽或高，则将窗口设置为最大
+        if (windowWidth == 0 || windowHeight == 0) {
+            // Set up a fixed width and height so window initialization does not fail
+            windowWidth = 100;
+            windowHeight = 100;
+            glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+            maximized = true;
+        }
+
+        // 创建窗口
         windowHandle = glfwCreateWindow(windowWidth, windowHeight, windowTitle, NULL, NULL);
         if ( windowHandle == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
@@ -53,21 +65,24 @@ public class Window {
             this.resized = true;
             //System.out.println("窗口大小改变");
         });
+        // 窗口化时将窗口置于屏幕中央
+        if (!maximized) {
+            // 获得当前屏幕的分辨率
+            GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+            // 根据分辨率将新创建的窗口至于屏幕中间
+            glfwSetWindowPos(
+                    windowHandle,
+                    (vidmode.width() - windowWidth) / 2,
+                    (vidmode.height() - windowHeight) / 2
+            );
+        }
 
-        // Setup a key callback. It will be called every time a key is pressed, repeated or released.
+        // 设置按键回掉
         glfwSetKeyCallback(windowHandle, (window, key, scancode, action, mods) -> {
             if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
                 glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
         });
 
-        // 获得当前屏幕的分辨率
-        GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        // 根据分辨率将新创建的窗口至于屏幕中间
-        glfwSetWindowPos(
-                windowHandle,
-                (vidmode.width() - windowWidth) / 2,
-                (vidmode.height() - windowHeight) / 2
-        );
         // 设置opengl的上下文
         glfwMakeContextCurrent(windowHandle);
 
@@ -84,14 +99,18 @@ public class Window {
         glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
         //启用深度测试？让像素点按照深度绘制，而不是随机顺序绘制
         glEnable(GL_DEPTH_TEST);
-        //以多边形模式进行显示，这将显示模型的三角形框架
-        //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+        if (opts.showTriangles) {
+            //以多边形模式进行显示，这将显示模型的三角形框架;
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
         // 支持透明，首次添加于创建hud
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        //启用 面剔除，并设置back为删除的规则，不渲染看不到的面，以面的朝向确定是否可见，确定面的3个点是逆时针排列的则是正面。
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+        if (opts.cullFace) {
+            //启用 面剔除，并设置back为删除的规则，不渲染看不到的面，以面的朝向确定是否可见，确定面的3个点是逆时针排列的则是正面。
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+        }
     }
     public long getWindowHandle() {
         return windowHandle;
@@ -133,7 +152,9 @@ public class Window {
         glfwFreeCallbacks(windowHandle);
         glfwDestroyWindow(windowHandle);
     }
-
-
-
+    //窗口设置内部类
+    public static class WindowOptions {
+        public boolean cullFace;
+        public boolean showTriangles;
+    }
 }

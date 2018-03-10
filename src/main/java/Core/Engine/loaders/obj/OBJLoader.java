@@ -1,6 +1,7 @@
-package Core.Engine.graph;
+package Core.Engine.loaders.obj;
 
 import Core.Engine.Utils;
+import Core.Engine.graph.Mesh;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 

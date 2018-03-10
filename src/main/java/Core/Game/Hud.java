@@ -6,6 +6,7 @@ import Core.Engine.IHud;
 import Core.Engine.items.TextItem;
 import Core.Engine.Window;
 import Core.Engine.graph.*;
+import Core.Engine.loaders.obj.OBJLoader;
 import org.joml.Vector4f;
 
 import java.awt.*;

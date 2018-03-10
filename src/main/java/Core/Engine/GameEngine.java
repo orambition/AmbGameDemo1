@@ -10,11 +10,15 @@ public class GameEngine implements Runnable {
     private final IGameLogic gameLogic;
     private final MouseInput mouseInput;
 
-
-    public GameEngine(String windowTitle, int width, int height, boolean vsSync, IGameLogic gameLogic)throws Exception{
+    //不传入窗口大小时，以全屏进行显示
+    public GameEngine(String windowTitle, boolean vSync, Window.WindowOptions opts, IGameLogic gameLogic) throws Exception {
+        this(windowTitle, 0, 0, vSync, opts, gameLogic);
+    }
+    //窗口化运行
+    public GameEngine(String windowTitle, int width, int height, boolean vsSync, Window.WindowOptions opts,IGameLogic gameLogic)throws Exception{
         gameLoopThread = new Thread(this,"GAME_LOOP_THREAD");
 
-        window = new Window(windowTitle,width,height,vsSync);
+        window = new Window(windowTitle,width,height,vsSync,opts);
         mouseInput = new MouseInput();
         this.gameLogic = gameLogic;
         timer = new Timer();
