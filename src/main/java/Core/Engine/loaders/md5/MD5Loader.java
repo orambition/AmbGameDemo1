@@ -1,37 +1,111 @@
 package Core.Engine.loaders.md5;
-//用于从md5model 加载模型到引擎中，转为gameitem
+//用于从md5model 和md5animModel加载模型到引擎中，转为Animgameitem
 
 import Core.Engine.Utils;
 import Core.Engine.graph.Material;
 import Core.Engine.graph.Mesh;
 import Core.Engine.graph.Texture;
-import Core.Engine.items.GameItem;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import Core.Engine.graph.anim.AnimGameItem;
+import Core.Engine.graph.anim.AnimatedFrame;
+import org.joml.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MD5Loader {
     private static final String NORMAL_FILE_SUFFIX = "_normal";
+    //解析md5模型文件和动作文件
+    public static AnimGameItem process(MD5Model md5Model, MD5AnimModel animModel, Vector4f defaultColour) throws Exception {
+        List<Matrix4f> invJointMatrices = calcInJointMatrices(md5Model);//获取关节初始位置矩阵
+        List<AnimatedFrame> animatedFrames = processAnimationFrames(md5Model, animModel, invJointMatrices);//生成动画帧列表
 
-    public static GameItem process(MD5Model md5Model, Vector4f defaultColour) throws Exception {
-        //List<MD5Mesh> md5MeshList = md5Model.getMeshes();
         List<Mesh> list = new ArrayList<>();
         for (MD5Mesh md5Mesh : md5Model.getMeshes()) {
-            //1、生产网格
-            Mesh mesh = generateMesh(md5Model, md5Mesh);
-            //2、处理纹理
-            handleTexture(mesh, md5Mesh, defaultColour);
+            Mesh mesh = generateMesh(md5Model, md5Mesh);//1、生产网格
+            handleTexture(mesh, md5Mesh, defaultColour);//2、处理纹理
             list.add(mesh);
         }
+
         Mesh[] meshes = new Mesh[list.size()];
         meshes = list.toArray(meshes);
-        GameItem gameItem = new GameItem(meshes);
-        return gameItem;
+        AnimGameItem result = new AnimGameItem(meshes, animatedFrames, invJointMatrices);
+        return result;
     }
-    //从模型类生产mesh网格类
+    //获取关节的初始位置和方向，生产位置矩阵
+    private static List<Matrix4f> calcInJointMatrices(MD5Model md5Model) {
+        List<Matrix4f> result = new ArrayList<>();
+        List<MD5JointInfo.MD5JointData> joints = md5Model.getJointInfo().getJoints();
+        for (MD5JointInfo.MD5JointData joint : joints) {
+            //用关节位置计算平移矩阵，用关节方向计算旋转矩阵
+            //利用旋转矩阵乘以平移矩阵得到变换矩阵，应用内部优化的旋转代替乘法。
+            Matrix4f mat = new Matrix4f()
+                    .translate(joint.getPosition())
+                    .rotate(joint.getOrientation())
+                    .invert();
+            result.add(mat);
+        }
+        return result;
+    }
+    //生产动画帧列表  -  关键函数
+    private static List<AnimatedFrame> processAnimationFrames(MD5Model md5Model, MD5AnimModel animModel, List<Matrix4f> invJointMatrices) {
+        List<AnimatedFrame> animatedFrames = new ArrayList<>();
+        List<MD5Frame> frames = animModel.getFrames();
+        for (MD5Frame frame : frames) {
+            AnimatedFrame data = processAnimationFrame(md5Model, animModel, frame, invJointMatrices);
+            animatedFrames.add(data);
+        }
+        return animatedFrames;
+    }
+    //生产每一帧
+    private static AnimatedFrame processAnimationFrame(MD5Model md5Model, MD5AnimModel animModel, MD5Frame frame, List<Matrix4f> invJointMatrices) {
+        AnimatedFrame result = new AnimatedFrame();
+        MD5BaseFrame baseFrame = animModel.getBaseFrame();
+        List<MD5Hierarchy.MD5HierarchyData> hierarchyList = animModel.getHierarchy().getHierarchyDataList();
+        List<MD5JointInfo.MD5JointData> joints = md5Model.getJointInfo().getJoints();
+        int numJoints = joints.size();
+        float[] frameData = frame.getFrameData();
+        for (int i = 0; i < numJoints; i++) {
+            MD5JointInfo.MD5JointData joint = joints.get(i);
+            MD5BaseFrame.MD5BaseFrameData baseFrameData = baseFrame.getFrameDataList().get(i);
+            Vector3f position = baseFrameData.getPosition();
+            Quaternionf orientation = baseFrameData.getOrientation();
+            int flags = hierarchyList.get(i).getFlags();
+            int startIndex = hierarchyList.get(i).getStartIndex();
+            if ((flags & 1) > 0) {
+                position.x = frameData[startIndex++];
+            }
+            if ((flags & 2) > 0) {
+                position.y = frameData[startIndex++];
+            }
+            if ((flags & 4) > 0) {
+                position.z = frameData[startIndex++];
+            }
+            if ((flags & 8) > 0) {
+                orientation.x = frameData[startIndex++];
+            }
+            if ((flags & 16) > 0) {
+                orientation.y = frameData[startIndex++];
+            }
+            if ((flags & 32) > 0) {
+                orientation.z = frameData[startIndex++];
+            }
+            // Update Quaternion's w component
+            orientation = MD5Utils.calculateQuaternion(orientation.x, orientation.y, orientation.z);
+            // Calculate translation and rotation matrices for this joint
+            Matrix4f translateMat = new Matrix4f().translate(position);
+            Matrix4f rotationMat = new Matrix4f().rotate(orientation);
+            Matrix4f jointMat = translateMat.mul(rotationMat);
+            // Joint position is relative to joint's parent index position. Use parent matrices
+            // to transform it to model space
+            if (joint.getParentIndex() > -1) {
+                Matrix4f parentMatrix = result.getLocalJointMatrices()[joint.getParentIndex()];
+                jointMat = new Matrix4f(parentMatrix).mul(jointMat);
+            }
+            result.setMatrix(i, jointMat, invJointMatrices.get(i));
+        }
+        return result;
+    }
+    //从模型类生产mesh网格类,md5模型加载的重要函数之一，md5模型的顶点位置，由骨骼位置及骨骼对顶点的影响权重确定。
     private static Mesh generateMesh(MD5Model md5Model, MD5Mesh md5Mesh) throws Exception {
         List<VertexInfo> vertexInfoList = new ArrayList<>();//顶点内部类
         List<Float> textCoords = new ArrayList<>();
@@ -100,7 +174,7 @@ public class MD5Loader {
         if (texturePath != null && texturePath.length() > 0) {
             //根据文件创建纹理和材质
             Texture texture = new Texture(texturePath);
-            Material material = new Material(texture);
+            Material material = new Material(texture,200f);
             // 根据材质名称拼接出法线贴图名称;
             int pos = texturePath.lastIndexOf(".");
             if (pos > 0) {

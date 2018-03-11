@@ -7,9 +7,9 @@ public class Material {
     private static final Vector4f DEFAULT_COLOUR = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
     //环境光参数
     private Vector4f ambientColour;
-    //漫反射参数
+    //漫反射参数        无纹理时生效
     private Vector4f diffuseColour;
-    //镜面反射参数
+    //高光（镜面反射参数）无纹理时生效
     private Vector4f specularColour;
     //反射率
     private float reflectance;

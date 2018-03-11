@@ -78,7 +78,7 @@ public class Renderer {
         sceneShaderProgram.createUniform("texture_sampler");
         // 创建材质Uniform
         sceneShaderProgram.createMaterialUniform("material");
-        // 创建镜面反射率、环境光uniform
+        // 创建高光（镜面反射率）、环境光uniform
         sceneShaderProgram.createUniform("specularPower");
         sceneShaderProgram.createUniform("ambientLight");
         // 创建点光源数组、聚光灯数组、平行光源uniform

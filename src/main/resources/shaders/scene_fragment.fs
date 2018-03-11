@@ -54,7 +54,7 @@ struct Fog{
 uniform sampler2D texture_sampler;//纹理
 uniform sampler2D normalMap;//法线纹理
 uniform vec3 ambientLight;//环境光，以相同的方式影响每一个面
-uniform float specularPower;//镜面反射率
+uniform float specularPower;//高光（镜面反射率）
 uniform Material material;//材质
 
 uniform PointLight pointLights[MAX_POINT_LIGHTS];//点光源

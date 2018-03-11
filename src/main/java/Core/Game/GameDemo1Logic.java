@@ -61,7 +61,7 @@ public class GameDemo1Logic implements IGameLogic {
 
         /**示例代码 - 开始*/
         //创建物体 方块
-        float reflectance = 0.65f;
+        float reflectance = 10f;
         Texture normalMap = new Texture("/textures/texture1_NORM.png");
         Mesh quadMesh1 = OBJLoader.loadMesh("/models/cube.obj");
 
@@ -79,7 +79,8 @@ public class GameDemo1Logic implements IGameLogic {
         MD5Model md5Model = MD5Model.parse("/models/test.md5mesh");
         GameItem demo4GameItem = MD5Loader.process(md5Model,new Vector4f(1,1,1,1));
         demo4GameItem.setScale(0.1f);
-        demo4GameItem.setRotation(90,0,0);
+        demo4GameItem.setPosition(0f, -3f,-3f);
+        demo4GameItem.setRotation(90f,0f,0f);
         /**示例代码 - 结束*/
 
         //加载物体
