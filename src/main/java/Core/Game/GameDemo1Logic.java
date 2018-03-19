@@ -2,11 +2,13 @@ package Core.Game;
 
 import Core.Engine.*;
 import Core.Engine.graph.*;
+import Core.Engine.graph.anim.AnimGameItem;
 import Core.Engine.graph.lights.DirectionalLight;
 import Core.Engine.graph.weather.Fog;
 import Core.Engine.items.GameItem;
 import Core.Engine.items.SkyBox;
 import Core.Engine.items.Terrain;
+import Core.Engine.loaders.md5.MD5AnimModel;
 import Core.Engine.loaders.md5.MD5Loader;
 import Core.Engine.loaders.md5.MD5Model;
 import Core.Engine.loaders.obj.OBJLoader;
@@ -35,7 +37,7 @@ public class GameDemo1Logic implements IGameLogic {
     private float lightAngle;//平行光角度、方向
 
     private Terrain terrain;//地形
-
+    private AnimGameItem demo4GameItem;
     public GameDemo1Logic(){
         renderer = new Renderer();
         camera = new Camera();
@@ -77,7 +79,8 @@ public class GameDemo1Logic implements IGameLogic {
 
         //加载md5
         MD5Model md5Model = MD5Model.parse("/models/test.md5mesh");
-        GameItem demo4GameItem = MD5Loader.process(md5Model,new Vector4f(1,1,1,1));
+        MD5AnimModel md5AnimModel = MD5AnimModel.parse("/models/test.md5anim");
+        demo4GameItem = MD5Loader.process(md5Model,md5AnimModel,new Vector4f(1,1,1,1));
         demo4GameItem.setScale(0.1f);
         demo4GameItem.setPosition(0f, -3f,-3f);
         demo4GameItem.setRotation(90f,0f,0f);
@@ -143,6 +146,9 @@ public class GameDemo1Logic implements IGameLogic {
             CAMERA_POS_STEP = 1f;
         }else {
             CAMERA_POS_STEP = 0.05f;
+        }
+        if (window.isKeyPressed(GLFW_KEY_ENTER) ) {
+            demo4GameItem.nextFrame();
         }
     }
 

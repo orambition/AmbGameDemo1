@@ -7,7 +7,7 @@ import java.util.Arrays;
 public class AnimatedFrame {
     public static final int MAX_JOINTS = 150;
     private static final Matrix4f IDENTITY_MATRIX = new Matrix4f();
-    private final Matrix4f[] localJointMatrices;
+    private final Matrix4f[] localJointMatrices;//注意此对象final属性
     private final Matrix4f[] jointMatrices;
     public AnimatedFrame() {
         localJointMatrices = new Matrix4f[MAX_JOINTS];
@@ -22,9 +22,9 @@ public class AnimatedFrame {
         return jointMatrices;
     }
     public void setMatrix(int pos, Matrix4f localJointMatrix, Matrix4f invJointMatrix) {
-        localJointMatrices[pos] = localJointMatrix;
+        localJointMatrices[pos] = localJointMatrix;//当前位置的变量
         Matrix4f mat = new Matrix4f(localJointMatrix);
-        mat.mul(invJointMatrix);
+        mat.mul(invJointMatrix);//将变量作用于初始位置，得到最终位置
         jointMatrices[pos] = mat;
     }
 }

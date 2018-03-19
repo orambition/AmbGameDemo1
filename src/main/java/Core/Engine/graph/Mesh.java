@@ -10,15 +10,14 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.lwjgl.opengl.ARBVertexArrayObject.glBindVertexArray;
 import static org.lwjgl.opengl.ARBVertexArrayObject.glDeleteVertexArrays;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE1;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
+import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
@@ -40,12 +39,19 @@ public class Mesh {
 
     private Material material;//材质
 
-    //将传进来的数据，位置坐标、纹理坐标、顶点法线、顺序等vbo,通过缓存存入vao（显存？）
-    public Mesh(float[] positions, float[] textCoords,float[] normals, int[] indices){
+    public static final int MAX_WEIGHTS = 4;//每个顶点可以关联的最多权重数量，
+    public Mesh(float[] positions, float[] textCoords, float[] normals, int[] indices) {
+        this(positions, textCoords, normals, indices, createEmptyIntArray(MAX_WEIGHTS * positions.length / 3, 0), createEmptyFloatArray(MAX_WEIGHTS * positions.length / 3, 0));
+    }
+
+    //将传进来的数据，位置坐标、纹理坐标、顶点法线、顺序、关节id、关节权重等vbo,通过缓存存入vao（显存？）
+    public Mesh(float[] positions, float[] textCoords,float[] normals, int[] indices, int[] jointIndices, float[] weights){
         FloatBuffer posBuffer = null;//位置缓存
         FloatBuffer textCoordsBuffer  = null;//纹理坐标缓存
         FloatBuffer vecNormalsBuffer = null;//法线缓存
         IntBuffer indicesBuffer = null;//序号缓存（确定了面）
+        IntBuffer jointIndicesBuffer = null;//关节id缓存
+        FloatBuffer weightsBuffer = null;//关节权重缓存
         try {
             vertexCount = indices.length;
             vboIdList = new ArrayList<>();
@@ -95,6 +101,24 @@ public class Mesh {
             glBufferData(GL_ARRAY_BUFFER, vecNormalsBuffer, GL_STATIC_DRAW);
             glVertexAttribPointer(2, 3, GL_FLOAT, false, 0, 0);
 
+            // 权重vbo，注意此处顺序
+            vboId = glGenBuffers();
+            vboIdList.add(vboId);
+            weightsBuffer = MemoryUtil.memAllocFloat(weights.length);
+            weightsBuffer.put(weights).flip();
+            glBindBuffer(GL_ARRAY_BUFFER, vboId);
+            glBufferData(GL_ARRAY_BUFFER, weightsBuffer, GL_STATIC_DRAW);
+            glVertexAttribPointer(3, 4, GL_FLOAT, false, 0, 0);
+
+            // 关节idVbo
+            vboId = glGenBuffers();
+            vboIdList.add(vboId);
+            jointIndicesBuffer = MemoryUtil.memAllocInt(jointIndices.length);
+            jointIndicesBuffer.put(jointIndices).flip();
+            glBindBuffer(GL_ARRAY_BUFFER, vboId);
+            glBufferData(GL_ARRAY_BUFFER, jointIndicesBuffer, GL_STATIC_DRAW);
+            glVertexAttribPointer(4, 4, GL_FLOAT, false, 0, 0);
+
             //创建索引vbo,并绑定
             vboId = glGenBuffers();
             vboIdList.add(vboId);
@@ -115,6 +139,10 @@ public class Mesh {
                 MemoryUtil.memFree(textCoordsBuffer);
             if (vecNormalsBuffer != null)
                 MemoryUtil.memFree(vecNormalsBuffer);
+            if (weightsBuffer != null)
+                MemoryUtil.memFree(weightsBuffer);
+            if (jointIndicesBuffer != null)
+                MemoryUtil.memFree(jointIndicesBuffer);
             if (indicesBuffer != null)
                 MemoryUtil.memFree(indicesBuffer);
         }//完成以上步骤，数据就已经在显存中了
@@ -133,6 +161,37 @@ public class Mesh {
 
     public int getVertexCount() {
         return vertexCount;
+    }
+    private void initRender() {
+        Texture texture = material.getTexture();
+        if (texture != null){
+            // 激活0号纹理单元
+            glActiveTexture(GL_TEXTURE0);
+            // 加载纹理。将传进来的纹理与其绑定
+            glBindTexture(GL_TEXTURE_2D, texture.getId());
+        }
+        //法线纹理
+        Texture normalMap = material.getNormalMap();
+        if (normalMap != null){
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, normalMap.getId());
+        }
+        // Bind to the VAO
+        glBindVertexArray(getVaoId());
+        glEnableVertexAttribArray(0);//启用数组1，对用位置
+        glEnableVertexAttribArray(1);//启用数组2，对用纹理坐标
+        glEnableVertexAttribArray(2);//启用数组2，对用顶点法线
+        glEnableVertexAttribArray(3);//启用数组3，对应权重
+        glEnableVertexAttribArray(4);//对应关节id
+    }
+    private void endRender() {
+        glDisableVertexAttribArray(0);//关闭数组1
+        glDisableVertexAttribArray(1);//关闭数组2
+        glDisableVertexAttribArray(2);//关闭数组3
+        glDisableVertexAttribArray(3);
+        glDisableVertexAttribArray(4);
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D,0);
     }
     //通过控制vao中的数组，进行显示相应的信息
     public void render(){
@@ -156,33 +215,7 @@ public class Mesh {
         }
         endRender();
     }
-    private void initRender() {
-        Texture texture = material.getTexture();
-        if (texture != null){
-            // 激活0号纹理单元
-            glActiveTexture(GL_TEXTURE0);
-            // 加载纹理。将传进来的纹理与其绑定
-            glBindTexture(GL_TEXTURE_2D, texture.getId());
-        }
-        //法线纹理
-        Texture normalMap = material.getNormalMap();
-        if (normalMap != null){
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, normalMap.getId());
-        }
-        // Bind to the VAO
-        glBindVertexArray(getVaoId());
-        glEnableVertexAttribArray(0);//启用数组1，对用位置
-        glEnableVertexAttribArray(1);//启用数组2，对用纹理坐标
-        glEnableVertexAttribArray(2);//启用数组2，对用顶点法线
-    }
-    private void endRender() {
-        glDisableVertexAttribArray(0);//关闭数组1
-        glDisableVertexAttribArray(1);//关闭数组2
-        glDisableVertexAttribArray(2);//关闭数组3
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D,0);
-    }
+
 
     public void cleanUp() {
         deleteBuffers();
@@ -202,5 +235,17 @@ public class Mesh {
         // Delete the VAO
         glBindVertexArray(0);
         glDeleteVertexArrays(vaoId);
+    }
+    //创建空的浮点数组，用于创建没有动画的mesh时，提供默认的参数
+    private static float[] createEmptyFloatArray(int length, float defaultValue) {
+        float[] result = new float[length];
+        Arrays.fill(result, defaultValue);
+        return result;
+    }
+    //创建空的整数数组，同上
+    private static int[] createEmptyIntArray(int length, int defaultValue) {
+        int[] result = new int[length];
+        Arrays.fill(result, defaultValue);
+        return result;
     }
 }

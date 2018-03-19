@@ -8,8 +8,9 @@ import java.util.List;
 
 public class AnimGameItem extends GameItem {
     private int currentFrame;
-    private List<AnimatedFrame> frames;
-    private List<Matrix4f> invJointMatrices;
+    private List<AnimatedFrame> frames;//每帧中关节的位置
+    private List<Matrix4f> invJointMatrices;//关节初始位置
+    //网格、每帧中关节的位置、关节初始位置
     public AnimGameItem(Mesh[] meshes, List<AnimatedFrame> frames, List<Matrix4f> invJointMatrices) {
         super(meshes);
         this.frames = frames;

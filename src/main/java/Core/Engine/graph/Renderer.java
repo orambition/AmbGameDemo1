@@ -3,6 +3,8 @@ package Core.Engine.graph;
 * 用于渲染画面*/
 
 import Core.Engine.*;
+import Core.Engine.graph.anim.AnimGameItem;
+import Core.Engine.graph.anim.AnimatedFrame;
 import Core.Engine.graph.lights.DirectionalLight;
 import Core.Engine.graph.lights.PointLight;
 import Core.Engine.graph.lights.SpotLight;
@@ -76,6 +78,8 @@ public class Renderer {
         sceneShaderProgram.createUniform("projectionMatrix");
         sceneShaderProgram.createUniform("modelViewMatrix");
         sceneShaderProgram.createUniform("texture_sampler");
+        //创建法线纹理uniform
+        sceneShaderProgram.createUniform("normalMap");
         // 创建材质Uniform
         sceneShaderProgram.createMaterialUniform("material");
         // 创建高光（镜面反射率）、环境光uniform
@@ -87,8 +91,8 @@ public class Renderer {
         sceneShaderProgram.createDirectionalLightUniform("directionalLight");
         //创建雾uniform
         sceneShaderProgram.createFogUniform("fog");
-        //创建法线纹理uniform
-        sceneShaderProgram.createUniform("normalMap");
+        //创建关节信息uniform
+        sceneShaderProgram.createUniform("jointsMatrix");
     }
     //创建hud着色器
     private void setupHudShader() throws Exception {
@@ -172,7 +176,13 @@ public class Renderer {
             mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
                         Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(gameItem, viewMatrix);
                         sceneShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
-                    }
+                        //如果是动画模型，则加载关键信息矩阵
+                        if ( gameItem instanceof AnimGameItem) {
+                            AnimGameItem animGameItem = (AnimGameItem)gameItem;
+                            AnimatedFrame frame = animGameItem.getCurrentFrame();
+                            sceneShaderProgram.setUniform("jointsMatrix", frame.getJointMatrices());
+                        }
+            }
 
             );
         }

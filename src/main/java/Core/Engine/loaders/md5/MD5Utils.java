@@ -12,16 +12,21 @@ public class MD5Utils {
     private MD5Utils() {
 
     }
-    //根据三维坐标生产4元数
     public static Quaternionf calculateQuaternion(Vector3f vec) {
-        //四元数类
-        Quaternionf orientation = new Quaternionf(vec.x, vec.y, vec.z, 0);
+        return calculateQuaternion(vec.x, vec.y, vec. z);
+    }
+    //根据三维坐标生产4元数，主要用于生成方向的w值
+    public static Quaternionf calculateQuaternion(float x, float y, float z) {
+        Quaternionf orientation = new Quaternionf(x, y, z, 0);
+        //此处涉及四元数和转换矩阵的计算，暂时不明白，不知道xyz是旋转角度还是方向向量
         float temp = 1.0f - (orientation.x * orientation.x) - (orientation.y * orientation.y) - (orientation.z * orientation.z);
         if (temp < 0.0f) {
-            orientation.w = 0.0f;
+            orientation.w = 0.0f;//方向
         } else {
-            orientation.w = -(float) (Math.sqrt(temp));
+            orientation.w = -(float) (Math.sqrt(temp));//与旋转不能表示180°有关？
         }
         return orientation;
+
     }
+
 }

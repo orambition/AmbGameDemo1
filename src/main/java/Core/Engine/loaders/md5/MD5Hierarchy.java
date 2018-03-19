@@ -39,7 +39,7 @@ public class MD5Hierarchy {
         //匹配示例："Bone"	-1 63 0	//
         private String name;//关节名称
         private int parentIndex;//父id
-        private int flags;//
+        private int flags;//二进制值，1，2，4，8，16，32，分别对应位置xyz、旋转xyz，如：63表示帧数据中含有6项数值
         private int startIndex;//每帧中该关节数据的开始位置
         public String getName() {
             return name;

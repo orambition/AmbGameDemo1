@@ -31,7 +31,7 @@ public class Utils {
         }
         return list;
     }
-    //列表 转 数组
+    //浮点型列表 转 数组
     public static float[] listToArray(List<Float> list) {
         int size = list != null ? list.size() : 0;
         float[] floatArr = new float[size];
@@ -39,6 +39,11 @@ public class Utils {
             floatArr[i] = list.get(i);
         }
         return floatArr;
+    }
+    //int型列表 转 数组
+    public static int[] listIntToArray(List<Integer> list) {
+        int[] result = list.stream().mapToInt((Integer v) -> v).toArray();
+        return result;
     }
     //检查文件是否存在
     public static boolean existsResourceFile(String fileName) {
