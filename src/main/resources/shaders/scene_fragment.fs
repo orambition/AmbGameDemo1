@@ -6,6 +6,7 @@ const int MAX_SPOT_LIGHTS = 5;
 in vec2 outTexCoord;
 in vec3 mvVertexNormal;
 in vec3 mvVertexPos;
+in vec4 mlightviewVertexPos;//物体在光源视角的位置，用来判断物体是否在阴影中
 in mat4 outModelViewMatrix;//因为点的法线是跟世界坐标变化的，所以需要该矩阵
 
 out vec4 fragColor;
@@ -62,6 +63,8 @@ uniform SpotLight spotLights[MAX_SPOT_LIGHTS];//聚光灯
 uniform DirectionalLight directionalLight;//平行光源
 
 uniform Fog fog;//雾
+
+uniform sampler2D shadowMap;//阴影图，由深度着色器绘制得出
 
 //全局变量
 vec4 ambientC;
@@ -144,7 +147,27 @@ vec3 calcNormal(Material material, vec3 normal, vec2 text_coord, mat4 modelViewM
     }
     return newNormal;
 }
-
+//计算传入的位置是否在阴影中，是返回1否0
+float calcShadow(vec4 position){
+    vec3 projCoords = position.xyz;
+    // 从屏幕坐标转换到纹理坐标
+    projCoords = projCoords * 0.5 + 0.5;
+    float bias = 0.05;
+    float shadowFactor = 0.0;
+    vec2 inc = 1.0 / textureSize(shadowMap, 0);
+    //获取改点周围的9个阴影值
+    for(int row = -1; row <= 1; ++row){
+        for(int col = -1; col <= 1; ++col){
+            float textDepth = texture(shadowMap, projCoords.xy + vec2(row, col) * inc).r;
+            shadowFactor += projCoords.z - bias > textDepth ? 1.0 : 0.0;
+        }
+    }
+    shadowFactor /= 9.0;
+    if(projCoords.z > 1.0){
+        shadowFactor = 1.0;
+    }
+    return 1 - shadowFactor;
+}
 void main(){
     setupColours(material, outTexCoord);
 
@@ -161,7 +184,9 @@ void main(){
             diffuseSpecularComp += calcSpotLight(spotLights[i], mvVertexPos, currNomal);
         }
     }
-    fragColor = ambientC * vec4(ambientLight, 1) + diffuseSpecularComp;
+    float shadow = calcShadow(mlightviewVertexPos);
+    fragColor = clamp(ambientC * vec4(ambientLight, 1) + diffuseSpecularComp * shadow, 0, 1);
+    //fragColor = ambientC * vec4(ambientLight, 1) + diffuseSpecularComp;
     if ( fog.activeFog == 1 ){
         fragColor = calcFog(mvVertexPos, fragColor, fog, ambientLight, directionalLight);
     }

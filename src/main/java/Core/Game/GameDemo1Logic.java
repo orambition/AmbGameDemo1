@@ -37,7 +37,11 @@ public class GameDemo1Logic implements IGameLogic {
     private float lightAngle;//平行光角度、方向
 
     private Terrain terrain;//地形
+
     private AnimGameItem demo4GameItem;
+    private float demoItemX = 0;
+    private float demoItemY = -5;
+    private float demoItemZ = -3;
     public GameDemo1Logic(){
         renderer = new Renderer();
         camera = new Camera();
@@ -82,7 +86,7 @@ public class GameDemo1Logic implements IGameLogic {
         MD5AnimModel md5AnimModel = MD5AnimModel.parse("/models/test.md5anim");
         demo4GameItem = MD5Loader.process(md5Model,md5AnimModel,new Vector4f(1,1,1,1));
         demo4GameItem.setScale(0.1f);
-        demo4GameItem.setPosition(0f, -3f,-3f);
+        demo4GameItem.setPosition(demoItemX, demoItemY,demoItemZ);
         demo4GameItem.setRotation(90f,0f,0f);
         /**示例代码 - 结束*/
 
@@ -120,9 +124,12 @@ public class GameDemo1Logic implements IGameLogic {
         // 环境光
         sceneLight.setAmbientLight(new Vector3f(1.0f, 1.0f, 1.0f));
         // 平行光
-        float lightIntensity = 0.1f;
-        Vector3f lightPosition = new Vector3f(-1, 0, 0);
-        sceneLight.setDirectionalLight(new DirectionalLight(new Vector3f(1, 1, 1), lightPosition, lightIntensity));
+        float lightIntensity = 1f;
+        Vector3f lightDirection  = new Vector3f(-1, 0, 0);
+        DirectionalLight directionalLight = new DirectionalLight(new Vector3f(1, 1, 1), lightDirection, lightIntensity);
+        directionalLight.setShadowPosMult(5);
+        directionalLight.setOrthoCords(-10.0f, 10.0f, -10.0f, 10.0f, -1.0f, 20.0f);
+        sceneLight.setDirectionalLight(directionalLight);
     }
     @Override
     public void input(Window window , MouseInput mouseInput) {
@@ -146,6 +153,17 @@ public class GameDemo1Logic implements IGameLogic {
             CAMERA_POS_STEP = 1f;
         }else {
             CAMERA_POS_STEP = 0.05f;
+        }
+
+        if (window.isKeyPressed(GLFW_KEY_UP)) {
+            demoItemZ -= 0.1;
+        } else if (window.isKeyPressed(GLFW_KEY_DOWN)) {
+            demoItemZ += 0.1;
+        }
+        if (window.isKeyPressed(GLFW_KEY_LEFT)) {
+            demoItemX -= 0.1;
+        } else if (window.isKeyPressed(GLFW_KEY_RIGHT)) {
+            demoItemX += 0.1;
         }
         if (window.isKeyPressed(GLFW_KEY_ENTER) ) {
             demo4GameItem.nextFrame();
@@ -176,6 +194,8 @@ public class GameDemo1Logic implements IGameLogic {
             //camera.movePosition(0,-2*CAMERA_POS_STEP,0);
         }
 
+        demo4GameItem.setPosition(demoItemX,demoItemY,demoItemZ);
+
         //更新场景灯光
         SceneLight sceneLight = scene.getSceneLight();
         //更新平行光的角度，模拟太阳
@@ -187,7 +207,7 @@ public class GameDemo1Logic implements IGameLogic {
                 lightAngle = -90;
             }
             //更新环境光，控制亮度
-            //sceneLight.getAmbientLight().set(0.3f, 0.3f, 0.4f);
+            sceneLight.getAmbientLight().set(0.3f, 0.3f, 0.4f);
         } else if (lightAngle <= -80 || lightAngle >= 80) {//日出日落
             float factor = 1 - (float) (Math.abs(lightAngle) - 80) / 10.0f;
             sceneLight.getAmbientLight().set(factor, factor, factor);

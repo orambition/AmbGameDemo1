@@ -12,16 +12,16 @@ layout (location=4) in ivec4 jointIndices;//关节id
 out vec2 outTexCoord;//将颜色传递给片段着色器
 out vec3 mvVertexNormal;//顶点法线
 out vec3 mvVertexPos;//顶点位置
-//out vec4 mlightviewVertexPos;//？？？
-out mat4 outModelViewMatrix;//为了实现法线纹理，需要将该矩阵传给片段着色器
+out vec4 mlightviewVertexPos;//模型在光源视角下的位置矩阵
+out mat4 outModelViewMatrix;//模型*视野矩阵，为了实现法线纹理，需要将该矩阵传给片段着色器
 
 uniform mat4 jointsMatrix[MAX_JOINTS];//关节信息数组
 
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
+uniform mat4 modelViewMatrix;//模型*摄像机视野矩阵
+uniform mat4 projectionMatrix;//透视矩阵
 
-//uniform mat4 modelLightViewMatrix;//？？？
-//uniform mat4 orthoProjectionMatrix;//？？？
+uniform mat4 modelLightViewMatrix;//模型*光源视野矩阵
+uniform mat4 orthoProjectionMatrix;//正交矩阵
 
 void main(){
     vec4 initPos = vec4(0, 0, 0, 0);
@@ -51,7 +51,7 @@ void main(){
     mvVertexNormal = normalize(modelViewMatrix * initNormal).xyz;
     mvVertexPos = mvPos.xyz;
 
-    //mlightviewVertexPos = orthoProjectionMatrix * modelLightViewMatrix * vec4(position, 1.0);//？？？
+    mlightviewVertexPos = orthoProjectionMatrix * modelLightViewMatrix * initPos;//？？？
 
     outModelViewMatrix = modelViewMatrix;
 }

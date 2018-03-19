@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL30.*;
 
 public class Renderer {
     //弧度视野
@@ -28,11 +30,13 @@ public class Renderer {
     //远平面距离
     private static final float Z_FAR = 1000.f;
 
-    //着色器程序，天空盒、场景和hud的
+    private ShadowMap shadowMap;//深度图
+
+    //着色器程序，深度图、天空盒、场景和hud的
+    private ShaderProgram depthShaderProgram;
     private ShaderProgram skyBoxShaderProgram;
     private ShaderProgram sceneShaderProgram;
     private ShaderProgram hudShaderProgram;
-
 
     //获取投影、视角等各种矩阵的工具类
     private final Transformation transformation;
@@ -49,11 +53,23 @@ public class Renderer {
         specularPower = 10f;
     }
     public void init(Window window) throws Exception {
+        shadowMap = new ShadowMap();
+
+        setupDepthShader();
         setupSkyBoxShader();
         setupSceneShader();
         setupHudShader();
     }
-    //创建天空盒
+    //创建深度图着色器
+    private void setupDepthShader() throws Exception {
+        depthShaderProgram = new ShaderProgram();
+        depthShaderProgram.createVertexShader(Utils.loadResource("/shaders/depth_vertex.vs"));
+        depthShaderProgram.createFragmentShader(Utils.loadResource("/shaders/depth_fragment.fs"));
+        depthShaderProgram.link();
+        depthShaderProgram.createUniform("orthoProjectionMatrix");
+        depthShaderProgram.createUniform("modelLightViewMatrix");
+    }
+    //创建天空盒着色器
     private void setupSkyBoxShader() throws Exception{
         skyBoxShaderProgram = new ShaderProgram();
         skyBoxShaderProgram.createVertexShader(Utils.loadResource("/shaders/skybox_vertex.vs"));
@@ -91,6 +107,10 @@ public class Renderer {
         sceneShaderProgram.createDirectionalLightUniform("directionalLight");
         //创建雾uniform
         sceneShaderProgram.createFogUniform("fog");
+        //创建阴影uniforms
+        sceneShaderProgram.createUniform("shadowMap");
+        sceneShaderProgram.createUniform("orthoProjectionMatrix");
+        sceneShaderProgram.createUniform("modelLightViewMatrix");
         //创建关节信息uniform
         sceneShaderProgram.createUniform("jointsMatrix");
     }
@@ -114,10 +134,12 @@ public class Renderer {
     //渲染函数
     public void render(Window window, Camera camera, Scene scene, IHud hud) {
         clear();
-        if (window.isResized()) {
+        //渲染深度图，在glViewport（）之前是因为，渲染深度图需要改变窗口大小为深度图纹理大小
+        renderDepthMap(window, camera, scene);
+        //if (window.isResized()) {
             glViewport(0, 0, window.getWindowWidth(), window.getWindowHeight());
-            window.setResized(false);
-        }
+            //window.setResized(false);
+        //}
         //设置共享的投影矩阵和视野矩阵
         transformation.updateProjectionMatrix(FOV, window.getWindowWidth(), window.getWindowHeight(), Z_NEAR, Z_FAR);
         transformation.updateViewMatrix(camera);
@@ -128,6 +150,40 @@ public class Renderer {
         //绘制HUD
         renderHud(window, hud);
     }
+    //绘制深度图
+    private void renderDepthMap(Window window, Camera camera, Scene scene) {
+        //绑定深度图fbo
+        glBindFramebuffer(GL_FRAMEBUFFER, shadowMap.getDepthMapFBO());
+        // 设置视野为深度图纹理的大小
+        glViewport(0, 0, ShadowMap.SHADOW_MAP_WIDTH, ShadowMap.SHADOW_MAP_HEIGHT);
+        glClear(GL_DEPTH_BUFFER_BIT);//清楚深度缓存的内容
+        //深度图着色器绑定
+        depthShaderProgram.bind();
+        DirectionalLight light = scene.getSceneLight().getDirectionalLight();//获取场景中的平行光
+        Vector3f lightDirection = light.getDirection();//光的方向
+        //生成平行光的位置，因为平光本身没有位置
+        float lightAngleX = (float)Math.toDegrees(Math.acos(lightDirection.z));
+        float lightAngleY = (float)Math.toDegrees(Math.asin(lightDirection.x));
+        float lightAngleZ = 0;
+        //生产光源视野矩阵
+        Matrix4f lightViewMatrix = transformation.updateLightViewMatrix(new Vector3f(lightDirection).mul(light.getShadowPosMult()), new Vector3f(lightAngleX, lightAngleY, lightAngleZ));
+        DirectionalLight.OrthoCoords orthCoords = light.getOrthoCoords();//获取光源正交坐标
+        //生产光源正交矩阵
+        Matrix4f orthoProjMatrix = transformation.updateOrthoProjectionMatrix(orthCoords.left, orthCoords.right, orthCoords.bottom, orthCoords.top, orthCoords.near, orthCoords.far);
+        depthShaderProgram.setUniform("orthoProjectionMatrix", orthoProjMatrix);
+        Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
+        for (Mesh mesh : mapMeshes.keySet()) {
+            mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
+                        Matrix4f modelLightViewMatrix = transformation.buildModelViewMatrix(gameItem, lightViewMatrix);
+                        depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                    }
+            );
+        }
+        //深度图着色器解绑
+        depthShaderProgram.unbind();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    //绘制天空盒
     private void renderSkyBox(Window window,Camera camera,Scene scene){
         skyBoxShaderProgram.bind();
 
@@ -154,34 +210,49 @@ public class Renderer {
         //透视矩阵，将三维坐标投影到二位屏幕上
         Matrix4f projectionMatrix = transformation.getProjectionMatrix();
         sceneShaderProgram.setUniform("projectionMatrix",projectionMatrix);
+        //正交矩阵，用于检测以光源为视野时物体的位置，以判断是否在阴影中
+        Matrix4f orthoProjMatrix = transformation.getOrthoProjectionMatrix();
+        sceneShaderProgram.setUniform("orthoProjectionMatrix", orthoProjMatrix);
 
         //视野矩阵,根据当前摄像机的位置和角度得到该矩阵，用于修正物体的显示坐标
         Matrix4f viewMatrix = transformation.getViewMatrix();
+        //光源视野矩阵
+        Matrix4f lightViewMatrix = transformation.getLightViewMatrix();
 
         //设置环境光、点光源数组、聚光灯数组、平行光和强度
         renderLights(viewMatrix, scene.getSceneLight());
 
-        //设置纹理单元，为显存中的0号纹理单元，将纹理放入0号单元的操作由Mesh建立时完成
-        sceneShaderProgram.setUniform("texture_sampler", 0);
-
         //设置雾的uniform
         sceneShaderProgram.setUniform("fog", scene.getFog());
 
+        //设置纹理单元，为显存中的0号纹理单元，将纹理放入0号单元的操作由Mesh建立时完成
+        sceneShaderProgram.setUniform("texture_sampler", 0);
         //设置法线纹理单元，为显存中的1号法线纹理单元，将法线纹理放入1号单元的操作由Mesh建立时完成
         sceneShaderProgram.setUniform("normalMap", 1);
+        //设置深度图单元，为显存中的2号，将深度图放入2号单元的操作在下面完成
+        sceneShaderProgram.setUniform("shadowMap", 2);
+
         //绘制每一个gameItem
         Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
         for (Mesh mesh : mapMeshes.keySet()) {
             sceneShaderProgram.setUniform("material", mesh.getMaterial());
+
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMapTexture().getId());
+
             mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
-                        Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(gameItem, viewMatrix);
-                        sceneShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
-                        //如果是动画模型，则加载关键信息矩阵
-                        if ( gameItem instanceof AnimGameItem) {
-                            AnimGameItem animGameItem = (AnimGameItem)gameItem;
-                            AnimatedFrame frame = animGameItem.getCurrentFrame();
-                            sceneShaderProgram.setUniform("jointsMatrix", frame.getJointMatrices());
-                        }
+                //模型*视野
+                Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(gameItem, viewMatrix);
+                sceneShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
+                //模型*光源视野
+                Matrix4f modelLightViewMatrix = transformation.buildModelLightViewMatrix(gameItem, lightViewMatrix);
+                sceneShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                //如果是动画模型，则加载关键信息矩阵
+                if ( gameItem instanceof AnimGameItem) {
+                    AnimGameItem animGameItem = (AnimGameItem)gameItem;
+                    AnimatedFrame frame = animGameItem.getCurrentFrame();
+                    sceneShaderProgram.setUniform("jointsMatrix", frame.getJointMatrices());
+                }
             }
 
             );
@@ -234,7 +305,7 @@ public class Renderer {
     private void renderHud(Window window, IHud hud) {
         hudShaderProgram.bind();
         //正交矩阵
-        Matrix4f ortho = transformation.getOrthoProjectionMatrix(0, window.getWindowWidth(), window.getWindowHeight(), 0);
+        Matrix4f ortho = transformation.getOrtho2DProjectionMatrix(0, window.getWindowWidth(), window.getWindowHeight(), 0);
         //Matrix4f projectionMatrix = transformation.getProjectionMatrix(FOV, window.getWindowWidth(), window.getWindowHeight(), Z_NEAR, Z_FAR);
 
         for (GameItem gameItem : hud.getGameItems()) {
