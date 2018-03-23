@@ -161,12 +161,12 @@ public class Renderer {
         depthShaderProgram.bind();
         DirectionalLight light = scene.getSceneLight().getDirectionalLight();//获取场景中的平行光
         Vector3f lightDirection = light.getDirection();//光的方向
-        //生成平行光的位置，因为平光本身没有位置
-        float lightAngleX = (float)Math.toDegrees(Math.acos(lightDirection.z));
-        float lightAngleY = (float)Math.toDegrees(Math.asin(lightDirection.x));
-        float lightAngleZ = 0;
-        //生产光源视野矩阵
-        Matrix4f lightViewMatrix = transformation.updateLightViewMatrix(new Vector3f(lightDirection).mul(light.getShadowPosMult()), new Vector3f(lightAngleX, lightAngleY, lightAngleZ));
+        //转换平行光的方向，因为光的方向与物体方向不同，向量转为每轴旋转的角度
+        float lightAngleX = 90;
+        float lightAngleY = 0;
+        float lightAngleZ = 90-(float)Math.toDegrees(Math.acos(lightDirection.x));
+        //生产光源视野矩阵,生成平行光的位置，因为平光本身没有位置
+        Matrix4f lightViewMatrix = transformation.updateLightViewMatrix(new Vector3f(lightDirection).mul(light.getShadowPosMult()), new Vector3f(lightAngleX,lightAngleY,lightAngleZ));
         DirectionalLight.OrthoCoords orthCoords = light.getOrthoCoords();//获取光源正交坐标
         //生产光源正交矩阵
         Matrix4f orthoProjMatrix = transformation.updateOrthoProjectionMatrix(orthCoords.left, orthCoords.right, orthCoords.bottom, orthCoords.top, orthCoords.near, orthCoords.far);
@@ -176,6 +176,12 @@ public class Renderer {
             mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
                         Matrix4f modelLightViewMatrix = transformation.buildModelViewMatrix(gameItem, lightViewMatrix);
                         depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                        //如果是动画模型，则加载关键信息矩阵
+                        if ( gameItem instanceof AnimGameItem) {
+                            AnimGameItem animGameItem = (AnimGameItem)gameItem;
+                            AnimatedFrame frame = animGameItem.getCurrentFrame();
+                            sceneShaderProgram.setUniform("jointsMatrix", frame.getJointMatrices());
+                        }
                     }
             );
         }

@@ -11,7 +11,7 @@ public class Main {
 
             IGameLogic gameLogic = new GameDemo1Logic();
             Window.WindowOptions opts = new Window.WindowOptions();
-            //opts.cullFace =true;
+            opts.cullFace =true;
             GameEngine gameEngine = new GameEngine("Amb",vSync,opts,gameLogic);
             gameEngine.start();
         } catch (Exception e) {

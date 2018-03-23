@@ -4,7 +4,7 @@ import org.joml.Vector3f;
 
 public class DirectionalLight {
     private Vector3f color;
-    private Vector3f direction;
+    private Vector3f direction;//方向，eg.方向(1,0,0,0)是右向左的光，从x轴的正半轴设想负半轴
     private float intensity;//强度
 
     private OrthoCoords orthoCords;//正交坐标，用于生产正交矩阵，以绘制该光源产生的阴影的深度图

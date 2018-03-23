@@ -28,7 +28,7 @@ public class Transformation {
 
     private static final Vector3f X_AXIS = new Vector3f(1, 0, 0);
     private static final Vector3f Y_AXIS = new Vector3f(0, 1, 0);
-
+    private static final Vector3f Z_AXIS = new Vector3f(0, 0, 1);
     public Transformation() {
         projectionMatrix = new Matrix4f();
         orthoProjMatrix = new Matrix4f();
@@ -73,7 +73,8 @@ public class Transformation {
         matrix.identity();
         // 首先旋转，使摄像机旋转到该方向。
         matrix.rotate((float)Math.toRadians(rotation.x), X_AXIS)
-                .rotate((float)Math.toRadians(rotation.y), Y_AXIS);
+                .rotate((float)Math.toRadians(rotation.y), Y_AXIS)
+                .rotate((float)Math.toRadians(rotation.z), Z_AXIS);
         // 让后移动到该位置，相机移动x的距离，就是物体移动-x的距离，相机是不动的，动的是世界
         matrix.translate(-position.x, -position.y, -position.z);
         return matrix;

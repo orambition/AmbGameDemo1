@@ -19,6 +19,7 @@ import java.util.List;
 
 public class MD5Loader {
     private static final String NORMAL_FILE_SUFFIX = "_normal";
+
     //解析md5模型文件和动作文件
     public static AnimGameItem process(MD5Model md5Model, MD5AnimModel animModel, Vector4f defaultColour) throws Exception {
         List<Matrix4f> invJointMatrices = calcInJointMatrices(md5Model);//获取关节初始位置矩阵

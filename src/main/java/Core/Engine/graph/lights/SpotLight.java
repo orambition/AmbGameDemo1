@@ -5,7 +5,7 @@ import org.joml.Vector3f;
 public class SpotLight {
     private PointLight pointLight;
     private Vector3f coneDirection;//方向
-    private float cutOff;//锥角？
+    private float cutOff;//锥角
 
     public SpotLight(PointLight pointLight, Vector3f coneDirection, float cutOffAngle) {
         this.pointLight = pointLight;

@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HeightMapMesh {
-    private static final int MAX_COLOUR = 255 * 255 * 255;
+    private static final int MAX_COLOUR = 256 * 256 * 256* 256-1;
     public static final float STARTX = -0.5f;//设置Mesh 的xz的大小范围在-0.5~0.5之间
     public static final float STARTZ = -0.5f;
     private final float minY;//输出高度的最小值
@@ -83,7 +83,7 @@ public class HeightMapMesh {
     public static float getZLength() {
         return Math.abs(-STARTZ * 2);
     }
-    //法线生成函数，很简单的生产过程，全是简单的向量运算
+    //法线生成函数，很简单的产生过程，全是简单的向量运算
     private float[] calcNormals(float[] posArr, int width, int height) {
         Vector3f v0 = new Vector3f();//
         Vector3f v1 = new Vector3f();

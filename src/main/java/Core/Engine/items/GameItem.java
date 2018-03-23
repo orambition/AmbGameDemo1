@@ -11,7 +11,7 @@ public class GameItem {
     //缩放
     private float scale;
     //旋转
-    private final Vector3f rotation;
+    private final Vector3f rotation;//方向旋转由于计算矩阵过程中是右乘的，所以顺序是zyx
 
     public GameItem() {
         position = new Vector3f(0, 0, 0);

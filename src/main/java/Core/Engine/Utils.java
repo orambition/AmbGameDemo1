@@ -1,5 +1,7 @@
 package Core.Engine;
 
+import org.joml.Vector3f;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -55,4 +57,23 @@ public class Utils {
         }
         return result;
     }
+    //方向向量旋转 转 欧拉角，有误，尚未确认
+    public static Vector3f VectorsEulerian(Vector3f VectorA,Vector3f VectorB){
+        Vector3f result = new Vector3f(0,0,0);
+
+        Vector3f normal = VectorA.cross(VectorB);
+        normal.normalize();
+
+        float fai = (float)(normal.y==0?0:Math.atan(normal.x/normal.y));
+        float xita = (float) Math.acos(normal.dot(0,0,1));
+        float omiga = (float) Math.acos(VectorA.dot(VectorB)/Math.abs(VectorA.length()*VectorB.length()));
+        result.y = (float)Math.toDegrees(2*Math.asin(Math.sin(omiga/2)*Math.sin(xita)));
+
+        //a+b = 2*Math.atan(Math.tan(omiga/2)*Math.cos(xita));
+        //a-b = 2*fai;
+        result.x = (float)Math.toDegrees(Math.atan(Math.tan(omiga/2)*Math.cos(xita)) + fai);
+        result.z = (float)Math.toDegrees(Math.atan(Math.tan(omiga/2)*Math.cos(xita)) - fai);
+        return result;
+    }
+
 }

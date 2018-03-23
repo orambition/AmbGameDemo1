@@ -5,6 +5,7 @@ import Core.Engine.Utils;
 import Core.Engine.graph.FontTexture;
 import Core.Engine.graph.Material;
 import Core.Engine.graph.Mesh;
+import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,11 +16,13 @@ public class TextItem extends GameItem {
     private static final int VERTICES_PER_QUAD = 4;
     private final FontTexture fontTexture;
     private String text;
+    private Vector4f AmbientColour;
 
-    public TextItem(String text, FontTexture fontTexture) throws Exception {
+    public TextItem(String text, FontTexture fontTexture, Vector4f AmbientColour) throws Exception {
         super();
         this.text = text;
         this.fontTexture = fontTexture;
+        this.AmbientColour = AmbientColour;
         setMesh(buildMesh());
     }
 
@@ -76,7 +79,9 @@ public class TextItem extends GameItem {
         int[] indicesArr = indices.stream().mapToInt(i->i).toArray();
         //mesh存储数据，材质指定纹理
         Mesh mesh = new Mesh(posArr, textCoordsArr, normals, indicesArr);
-        mesh.setMaterial(new Material(fontTexture.getTexture()));
+        Material material = new Material(fontTexture.getTexture());
+        material.setAmbientColour(AmbientColour);
+        mesh.setMaterial(material);
         return mesh;
     }
     public String getText() {

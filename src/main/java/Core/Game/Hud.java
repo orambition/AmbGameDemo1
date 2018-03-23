@@ -24,14 +24,14 @@ public class Hud implements IHud{
     public Hud(String statusText) throws Exception {
         FontTexture fontTexture = new FontTexture(FONT, CHARSET);
         //文字hud
-        this.statusTextItem = new TextItem(statusText, fontTexture);
-        this.statusTextItem.getMesh().getMaterial().setAmbientColour(new Vector4f(1, 1, 1, 1));
+        this.statusTextItem = new TextItem(statusText, fontTexture,new Vector4f(0, 0, 0, 1));
+        //this.statusTextItem.getMesh().getMaterial().setAmbientColour(new Vector4f(0, 0, 0, 1));
         //this.statusTextItem.setRotation(0f,60f,0f);
         //this.statusTextItem.setScale(0.05f);
         // 加载罗盘
         Mesh mesh = OBJLoader.loadMesh("/models/compass.obj");
         Material material = new Material();
-        material.setAmbientColour(new Vector4f(1, 1, 0, 1));
+        material.setAmbientColour(new Vector4f(0, 0, 0, 1));
         mesh.setMaterial(material);
         compassItem = new GameItem(mesh);
         compassItem.setScale(40.0f);
