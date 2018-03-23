@@ -41,7 +41,7 @@ public class GameEngine implements Runnable {
         }catch (Exception exp){
             exp.printStackTrace();
         }finally {
-            cleanup();
+            cleanUp();
         }
     }
     private void init() throws Exception {
@@ -80,8 +80,8 @@ public class GameEngine implements Runnable {
         }
     }
 
-    protected void cleanup(){
-        gameLogic.cleanup();
+    protected void cleanUp(){
+        gameLogic.cleanUp();
     }
 
     private void sync(){

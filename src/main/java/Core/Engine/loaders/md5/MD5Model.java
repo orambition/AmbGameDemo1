@@ -8,7 +8,7 @@ public class MD5Model {
     //根据md5文件中的属性，建立以下类
     private MD5JointInfo jointInfo;//关节信息
     private MD5ModelHeader header;//头部信息
-    private List<MD5Mesh> meshes;//mesh信息
+    private List<MD5Mesh> meshes;//mesh信息，注意，blender导出的模型法向与引擎相反
     public MD5Model() {
         meshes = new ArrayList<>();
     }

@@ -3,9 +3,19 @@ based on lwjgl3 game demo
 教程地址：
 https://github.com/lwjglgamedev/lwjglbook
 
+增加粒子支持
+    -增加粒子类、粒子发生器类
+    -增加粒子着色器，修改相应的render方法
+    -修改纹理，使其支持分块获取
+    -粒子朝向存在bug，Renderer类中renderParticles（）方法存在问题
+    page273 - over
+    cp20 - over
+   
+    2018-03-23
+
 修复md5模型阴影不现实bug
-修改视野旋转矩阵的生成方法，使其支持z轴旋转
-增加平行光角度2维旋转
+    修改视野旋转矩阵的生成方法，使其支持z轴旋转
+    增加平行光角度2维旋转
 
     2018-03-23
 

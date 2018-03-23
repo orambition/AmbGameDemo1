@@ -96,7 +96,22 @@ public class Transformation {
         return updateGenericViewMatrix(position, rotation, lightViewMatrix);
     }
 
-    //将物体的位置矩阵与参数中的视野矩阵相乘，因为视野会影响物体的显示坐标，所以需要进行改处理
+    //生成物体矩阵
+    public Matrix4f buildModelMatrix(GameItem gameItem) {
+        Vector3f rotation = gameItem.getRotation();
+        modelMatrix.identity().translate(gameItem.getPosition()).
+                rotateX((float)Math.toRadians(-rotation.x)).
+                rotateY((float)Math.toRadians(-rotation.y)).
+                rotateZ((float)Math.toRadians(-rotation.z)).
+                scale(gameItem.getScale());
+        return modelMatrix;
+    }
+    //将物体矩阵与视野矩阵相乘
+    public Matrix4f buildModelViewMatrix(Matrix4f modelMatrix, Matrix4f viewMatrix) {
+        modelViewMatrix.set(viewMatrix);
+        return modelViewMatrix.mul(modelMatrix);
+    }
+    //同上，将物体的位置矩阵与参数中的视野矩阵相乘，因为视野会影响物体的显示坐标，所以需要进行改处理
     public Matrix4f buildModelViewMatrix(GameItem gameItem, Matrix4f matrix) {
         Vector3f rotation = gameItem.getRotation();
         modelMatrix.identity().translate(gameItem.getPosition()).
@@ -107,6 +122,8 @@ public class Transformation {
         modelViewMatrix.set(matrix);
         return modelViewMatrix.mul(modelMatrix);
     }
+
+
     //将物体的位置矩阵与参数中的光源视野矩阵相乘
     public Matrix4f buildModelLightViewMatrix(GameItem gameItem, Matrix4f matrix) {
         Vector3f rotation = gameItem.getRotation();

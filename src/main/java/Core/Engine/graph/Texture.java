@@ -16,6 +16,10 @@ public class Texture {
     private final int id;
     private final int width;
     private final int height;
+
+    private int numRows = 1;//将材质分为n行n列，用于动态的使用不同部分
+    private int numCols = 1;//默认为1就是不分割
+
     //根据大小创建空的材质，用于绘制深度图
     public Texture(int width, int height, int pixelFormat) throws Exception {
         this.id = glGenTextures();
@@ -28,8 +32,11 @@ public class Texture {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);//超出【0，1】时不重复
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
-
-
+    public Texture(String fileName, int numCols, int numRows) throws Exception  {
+        this(fileName);
+        this.numCols = numCols;
+        this.numRows = numRows;
+    }
     public Texture(String fileName) throws Exception {
         this(Texture.class.getResourceAsStream(fileName));
     }
@@ -97,4 +104,13 @@ public class Texture {
     public void cleanup() {
         glDeleteTextures(id);
     }
+
+    public int getNumRows() {
+        return numRows;
+    }
+
+    public int getNumCols() {
+        return numCols;
+    }
+
 }

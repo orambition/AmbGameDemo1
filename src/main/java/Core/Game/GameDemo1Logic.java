@@ -4,6 +4,8 @@ import Core.Engine.*;
 import Core.Engine.graph.*;
 import Core.Engine.graph.anim.AnimGameItem;
 import Core.Engine.graph.lights.DirectionalLight;
+import Core.Engine.graph.particles.FlowParticleEmitter;
+import Core.Engine.graph.particles.Particle;
 import Core.Engine.graph.weather.Fog;
 import Core.Engine.items.GameItem;
 import Core.Engine.items.SkyBox;
@@ -15,9 +17,6 @@ import Core.Engine.loaders.obj.OBJLoader;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-
-import java.util.List;
-import java.util.Map;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -40,10 +39,11 @@ public class GameDemo1Logic implements IGameLogic {
 
     private final Vector3f cameraInc;//视野移动变量
     private final Vector3f cameraros;//
-    private AnimGameItem demo4GameItem;//视野移动变量
 
-    GameItem quadGameItem1;
-    private float demoItemX = 0f;
+    private AnimGameItem demo4GameItem;
+    private GameItem quadGameItem1;
+    private FlowParticleEmitter particleEmitter;
+    private float demoItemX = 0f;//视野移动变量
     private float demoItemY = 1f;
     private float demoItemZ = 0;
     public GameDemo1Logic(){
@@ -73,13 +73,13 @@ public class GameDemo1Logic implements IGameLogic {
         /**示例代码 - 开始*/
         //创建物体 方块
 
-        Mesh quadMesh1 = OBJLoader.loadMesh("/models/cube.obj");
+        Mesh quadMesh = OBJLoader.loadMesh("/models/cube.obj");
         Texture texture = new Texture("/textures/texture1.png");
         Texture normalMap = new Texture("/textures/texture1_NORM.png");
         Material quadMaterial1 = new Material(texture,10f);
         quadMaterial1.setNormalMap(normalMap);
-        quadMesh1.setMaterial(quadMaterial1);
-        quadGameItem1 = new GameItem(quadMesh1);
+        quadMesh.setMaterial(quadMaterial1);
+        quadGameItem1 = new GameItem(quadMesh);
         quadGameItem1.setPosition(0f, 0f, 0f);
         quadGameItem1.setScale(0.5f);
 
@@ -91,14 +91,33 @@ public class GameDemo1Logic implements IGameLogic {
         demo4GameItem.setPosition(demoItemX, demoItemY,demoItemZ);
         demo4GameItem.setRotation(90f,0f,-90f);
 
-        /**示例代码 - 结束*/
-
         //加载物体
         GameItem[] gameItems = new GameItem[temp.length+2];
         System.arraycopy(temp,0,gameItems,0,temp.length);
         gameItems[temp.length] = quadGameItem1;
         gameItems[temp.length+1] = demo4GameItem;
+
         scene.setGameItems(gameItems);
+        /**示例代码 - 结束*/
+
+        //添加粒子
+        Vector3f particleSpeed = new Vector3f(0,1,0);
+        particleSpeed.mul(2.5f);
+        long ttl = 2000;
+        int maxParticles = 200;
+        long creationPeriodMillis = 300;
+        float range = 0.2f;
+        Mesh partMesh = OBJLoader.loadMesh("/models/particle.obj");
+        texture = new Texture("/textures/particle_anim.png",4,4);
+        Material partMaterial = new Material(texture,10f);
+        partMesh.setMaterial(partMaterial);
+        Particle particle = new Particle(partMesh,particleSpeed,ttl,100);
+        particle.setScale(1f);
+        particleEmitter = new FlowParticleEmitter(particle,maxParticles,creationPeriodMillis);
+        particleEmitter.setActive(true);
+        particleEmitter.setPositionRndRange(range);
+        particleEmitter.setSpeedRndRange(range);
+        this.scene.setParticleEmitters(new FlowParticleEmitter[] {particleEmitter});
 
         //开启雾
         scene.setFog(new Fog(true, new Vector3f(0.3f, 0.3f, 0.3f), 0.05f));
@@ -202,7 +221,7 @@ public class GameDemo1Logic implements IGameLogic {
             //camera.movePosition(0,-2*CAMERA_POS_STEP,0);
         }
         demo4GameItem.getPosition().x=demoItemX;
-        demo4GameItem.getPosition().y=demoItemY;
+        //demo4GameItem.getPosition().y=demoItemY;
         demo4GameItem.getPosition().z=demoItemZ;
         quadGameItem1.getPosition().x=-demoItemX;
         //quadGameItem1.getPosition().y=-demoItemY;
@@ -237,23 +256,24 @@ public class GameDemo1Logic implements IGameLogic {
         lightDirection.y = (float) Math.sin(angRad);
         lightDirection.z = 0;
         lightDirection.normalize();
+        //更新粒子
+        particleEmitter.update((long)(interval*1000));
         //更新HUD
-        //hud.setStatusText(String.valueOf(Math.toDegrees(Math.acos(lightDirection.x)))+":"+lightAngle+":"+lightDirection.x);
+        //hud.setStatusText(String.valueOf(particleEmitter.getParticles().size()));
     }
-
     @Override
     public void render(Window window) {
-        hud.updateSize(window);
+        if (hud != null) {
+            hud.updateSize(window);
+        }
         renderer.render(window,camera,scene,hud);
     }
-
     @Override
-    public void cleanup() {
+    public void cleanUp() {
         renderer.cleanUp();
-        Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
-        for (Mesh mesh : mapMeshes.keySet()) {
-            mesh.cleanUp();
+        scene.cleanUp();
+        if (hud != null) {
+            hud.cleanUp();
         }
-        hud.cleanUp();
     }
 }

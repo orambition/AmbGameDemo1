@@ -12,11 +12,12 @@ public class GameItem {
     private float scale;
     //旋转
     private final Vector3f rotation;//方向旋转由于计算矩阵过程中是右乘的，所以顺序是zyx
-
+    private int textPos;//纹理中块的位置，纹理分为行列之后新增的属性，纹理默认不分割，默认为0就是整个纹理，
     public GameItem() {
         position = new Vector3f(0, 0, 0);
         scale = 1;
         rotation = new Vector3f(0, 0, 0);
+        textPos = 0;
     }
     public GameItem(Mesh mesh) {
         this();
@@ -26,6 +27,14 @@ public class GameItem {
         this();
         this.meshes = meshes;
     }
+
+    public int getTextPos() {
+        return textPos;
+    }
+    public void setTextPos(int textPos) {
+        this.textPos = textPos;
+    }
+
     public Vector3f getPosition() {
         return position;
     }
@@ -65,5 +74,12 @@ public class GameItem {
     }
     public void setMeshes(Mesh[] meshes) {
         this.meshes = meshes;
+    }
+
+    public void cleanUp() {
+        int numMeshes = this.meshes != null ? this.meshes.length : 0;
+        for(int i=0; i<numMeshes; i++) {
+            this.meshes[i].cleanUp();
+        }
     }
 }

@@ -8,6 +8,7 @@ import Core.Engine.graph.anim.AnimatedFrame;
 import Core.Engine.graph.lights.DirectionalLight;
 import Core.Engine.graph.lights.PointLight;
 import Core.Engine.graph.lights.SpotLight;
+import Core.Engine.graph.particles.IParticleEmitter;
 import Core.Engine.items.GameItem;
 import Core.Engine.items.SkyBox;
 import org.joml.Matrix4f;
@@ -18,8 +19,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL13.*;
-import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE2;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
+import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
+import static org.lwjgl.opengl.GL30.glBindFramebuffer;
 
 public class Renderer {
     //弧度视野
@@ -29,24 +32,22 @@ public class Renderer {
     private static final float Z_NEAR = 0.01f;
     //远平面距离
     private static final float Z_FAR = 1000.f;
+    //光源数量
+    private static final int MAX_POINT_LIGHTS = 5;
+    private static final int MAX_SPOT_LIGHTS = 5;
 
     private ShadowMap shadowMap;//深度图
+    //获取投影、视角等各种矩阵的工具类
+    private final Transformation transformation;
 
-    //着色器程序，深度图、天空盒、场景和hud的
+    //着色器程序，深度图、天空盒、场景和hud、粒子的
     private ShaderProgram depthShaderProgram;
     private ShaderProgram skyBoxShaderProgram;
     private ShaderProgram sceneShaderProgram;
     private ShaderProgram hudShaderProgram;
-
-    //获取投影、视角等各种矩阵的工具类
-    private final Transformation transformation;
-
+    private ShaderProgram particlesShaderProgram;
     //镜面反射率
     private float specularPower;
-
-    //光源数量
-    private static final int MAX_POINT_LIGHTS = 5;
-    private static final int MAX_SPOT_LIGHTS = 5;
 
     public Renderer(){
         transformation = new Transformation();
@@ -58,6 +59,7 @@ public class Renderer {
         setupDepthShader();
         setupSkyBoxShader();
         setupSceneShader();
+        setupParticlesShader();
         setupHudShader();
     }
     //创建深度图着色器
@@ -68,19 +70,6 @@ public class Renderer {
         depthShaderProgram.link();
         depthShaderProgram.createUniform("orthoProjectionMatrix");
         depthShaderProgram.createUniform("modelLightViewMatrix");
-    }
-    //创建天空盒着色器
-    private void setupSkyBoxShader() throws Exception{
-        skyBoxShaderProgram = new ShaderProgram();
-        skyBoxShaderProgram.createVertexShader(Utils.loadResource("/shaders/skybox_vertex.vs"));
-        skyBoxShaderProgram.createFragmentShader(Utils.loadResource("/shaders/skybox_fragment.fs"));
-        skyBoxShaderProgram.link();
-
-        skyBoxShaderProgram.createUniform("projectionMatrix");
-        skyBoxShaderProgram.createUniform("modelViewMatrix");
-        skyBoxShaderProgram.createUniform("texture_sampler");
-        skyBoxShaderProgram.createUniform("ambientLight");
-
     }
     //创建场景着色器
     private void setupSceneShader() throws Exception {
@@ -114,6 +103,34 @@ public class Renderer {
         //创建关节信息uniform
         sceneShaderProgram.createUniform("jointsMatrix");
     }
+    //创建粒子着色器
+    private void setupParticlesShader() throws Exception {
+        particlesShaderProgram = new ShaderProgram();
+        particlesShaderProgram.createVertexShader(Utils.loadResource("/shaders/particles_vertex.vs"));
+        particlesShaderProgram.createFragmentShader(Utils.loadResource("/shaders/particles_fragment.fs"));
+        particlesShaderProgram.link();
+        particlesShaderProgram.createUniform("projectionMatrix");
+        particlesShaderProgram.createUniform("modelViewMatrix");
+        particlesShaderProgram.createUniform("texture_sampler");
+
+        particlesShaderProgram.createUniform("texXOffset");
+        particlesShaderProgram.createUniform("texYOffset");
+        particlesShaderProgram.createUniform("numCols");
+        particlesShaderProgram.createUniform("numRows");
+    }
+    //创建天空盒着色器
+    private void setupSkyBoxShader() throws Exception{
+        skyBoxShaderProgram = new ShaderProgram();
+        skyBoxShaderProgram.createVertexShader(Utils.loadResource("/shaders/skybox_vertex.vs"));
+        skyBoxShaderProgram.createFragmentShader(Utils.loadResource("/shaders/skybox_fragment.fs"));
+        skyBoxShaderProgram.link();
+
+        skyBoxShaderProgram.createUniform("projectionMatrix");
+        skyBoxShaderProgram.createUniform("modelViewMatrix");
+        skyBoxShaderProgram.createUniform("texture_sampler");
+        skyBoxShaderProgram.createUniform("ambientLight");
+
+    }
     //创建hud着色器
     private void setupHudShader() throws Exception {
         hudShaderProgram = new ShaderProgram();
@@ -145,9 +162,8 @@ public class Renderer {
         transformation.updateViewMatrix(camera);
 
         renderScene(window, camera, scene);
-
-        renderSkyBox(window,camera,scene);
-        //绘制HUD
+        renderSkyBox(window,camera,scene);//注意顺序
+        renderParticles(window, camera, scene);
         renderHud(window, hud);
     }
     //绘制深度图
@@ -188,26 +204,6 @@ public class Renderer {
         //深度图着色器解绑
         depthShaderProgram.unbind();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-    //绘制天空盒
-    private void renderSkyBox(Window window,Camera camera,Scene scene){
-        skyBoxShaderProgram.bind();
-
-        skyBoxShaderProgram.setUniform("texture_sampler",0);
-
-        Matrix4f projectionMatrix = transformation.getProjectionMatrix();
-        skyBoxShaderProgram.setUniform("projectionMatrix", projectionMatrix);
-        SkyBox skyBox = scene.getSkyBox();
-        Matrix4f viewMatrix = transformation.getViewMatrix();
-        //天空盒并不随着摄像机移动，所以将xyz的变化设置为0
-        viewMatrix.m30 = 0;
-        viewMatrix.m31 = 0;
-        viewMatrix.m32 = 0;
-        Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(skyBox, viewMatrix);
-        skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
-        skyBoxShaderProgram.setUniform("ambientLight", scene.getSceneLight().getAmbientLight());
-        scene.getSkyBox().getMesh().render();
-        skyBoxShaderProgram.unbind();
     }
     //绘制场景
     private void renderScene(Window window, Camera camera, Scene scene) {
@@ -307,25 +303,97 @@ public class Renderer {
         currDirLight.setDirection(new Vector3f(dir.x, dir.y, dir.z));
         sceneShaderProgram.setUniform("directionalLight", currDirLight);
     }
+    //绘制粒子
+    private void renderParticles(Window window, Camera camera, Scene scene) {
+        particlesShaderProgram.bind();
+        particlesShaderProgram.setUniform("texture_sampler", 0);
+        Matrix4f projectionMatrix = transformation.getProjectionMatrix();
+        particlesShaderProgram.setUniform("projectionMatrix", projectionMatrix);
+        Matrix4f viewMatrix = transformation.getViewMatrix();
+        IParticleEmitter[] emitters = scene.getParticleEmitters();
+        int numEmitters = emitters != null ? emitters.length : 0;
+        glDepthMask(false);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        for (int i = 0; i < numEmitters; i++) {
+            IParticleEmitter emitter = emitters[i];
+            Mesh mesh = emitter.getBaseParticle().getMesh();
+            Texture text = mesh.getMaterial().getTexture();
+            particlesShaderProgram.setUniform("numCols", text.getNumCols());
+            particlesShaderProgram.setUniform("numRows", text.getNumRows());
+
+            mesh.renderList((emitter.getParticles()), (GameItem gameItem) -> {
+                int col = gameItem.getTextPos() % text.getNumCols();
+                int row = gameItem.getTextPos() / text.getNumCols();
+                float textXOffset = (float) col / text.getNumCols();
+                float textYOffset = (float) row / text.getNumRows();
+                particlesShaderProgram.setUniform("texXOffset", textXOffset);
+                particlesShaderProgram.setUniform("texYOffset", textYOffset);
+
+                //为了让粒子不随摄像机转动，对其模型矩阵进行处理
+                Matrix4f modelMatrix = transformation.buildModelMatrix(gameItem);
+                //让其反向旋转（左乘？），然后在乘以视野矩阵
+                //viewMatrix.transpose3x3(modelMatrix);
+                //viewMatrix.scale(gameItem.getScale());
+                Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(modelMatrix, viewMatrix);
+                //modelViewMatrix.scale(gameItem.getScale());
+                particlesShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
+            }
+            );
+        }
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(true);
+        particlesShaderProgram.unbind();
+    }
+    //绘制天空盒
+    private void renderSkyBox(Window window,Camera camera,Scene scene){
+        SkyBox skyBox = scene.getSkyBox();
+        if (skyBox != null) {
+            skyBoxShaderProgram.bind();
+
+            skyBoxShaderProgram.setUniform("texture_sampler", 0);
+
+            Matrix4f projectionMatrix = transformation.getProjectionMatrix();
+            skyBoxShaderProgram.setUniform("projectionMatrix", projectionMatrix);
+
+            Matrix4f viewMatrix = transformation.getViewMatrix();
+            //天空盒并不随着摄像机移动，所以将xyz的变化设置为0
+            float m30 = viewMatrix.m30;
+            viewMatrix.m30 = 0;
+            float m31 = viewMatrix.m31;
+            viewMatrix.m31 = 0;
+            float m32 = viewMatrix.m32;
+            viewMatrix.m32 = 0;
+            Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(skyBox, viewMatrix);
+            skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
+            skyBoxShaderProgram.setUniform("ambientLight", scene.getSceneLight().getAmbientLight());
+            scene.getSkyBox().getMesh().render();
+            viewMatrix.m30 = m30;
+            viewMatrix.m31 = m31;
+            viewMatrix.m32 = m32;
+            skyBoxShaderProgram.unbind();
+        }
+    }
     //绘制hud的函数，填充hud相关uniform
     private void renderHud(Window window, IHud hud) {
-        hudShaderProgram.bind();
-        //正交矩阵
-        Matrix4f ortho = transformation.getOrtho2DProjectionMatrix(0, window.getWindowWidth(), window.getWindowHeight(), 0);
-        //Matrix4f projectionMatrix = transformation.getProjectionMatrix(FOV, window.getWindowWidth(), window.getWindowHeight(), Z_NEAR, Z_FAR);
+        if (hud != null) {
+            hudShaderProgram.bind();
+            //正交矩阵
+            Matrix4f ortho = transformation.getOrtho2DProjectionMatrix(0, window.getWindowWidth(), window.getWindowHeight(), 0);
+            //Matrix4f projectionMatrix = transformation.getProjectionMatrix(FOV, window.getWindowWidth(), window.getWindowHeight(), Z_NEAR, Z_FAR);
 
-        for (GameItem gameItem : hud.getGameItems()) {
-            Mesh mesh = gameItem.getMesh();
-            // hud的投影矩阵
-            Matrix4f projModelMatrix = transformation.buildOrtoProjModelMatrix(gameItem, ortho);
-            //Matrix4f projModelMatrix = transformation.getWorldMatrix(gameItem,projectionMatrix);
-            hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
-            hudShaderProgram.setUniform("colour", gameItem.getMesh().getMaterial().getAmbientColour());
-            hudShaderProgram.setUniform("hasTexture", gameItem.getMesh().getMaterial().isTextured() ? 1 : 0);
-            // Render the mesh for this HUD item
-            mesh.render();
+            for (GameItem gameItem : hud.getGameItems()) {
+                Mesh mesh = gameItem.getMesh();
+                // hud的投影矩阵
+                Matrix4f projModelMatrix = transformation.buildOrtoProjModelMatrix(gameItem, ortho);
+                //Matrix4f projModelMatrix = transformation.getWorldMatrix(gameItem,projectionMatrix);
+                hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
+                hudShaderProgram.setUniform("colour", gameItem.getMesh().getMaterial().getAmbientColour());
+                hudShaderProgram.setUniform("hasTexture", gameItem.getMesh().getMaterial().isTextured() ? 1 : 0);
+                // Render the mesh for this HUD item
+                mesh.render();
+            }
+            hudShaderProgram.unbind();
         }
-        hudShaderProgram.unbind();
     }
     //
     public void cleanUp(){

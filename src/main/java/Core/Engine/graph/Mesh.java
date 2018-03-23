@@ -193,7 +193,7 @@ public class Mesh {
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D,0);
     }
-    //通过控制vao中的数组，进行显示相应的信息
+    //通过控制vao中的数组，进行显示相应的信息,hud和天空盒使用该函数
     public void render(){
         initRender();
         /*绘制图形，参数：
