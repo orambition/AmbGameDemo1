@@ -3,6 +3,18 @@ based on lwjgl3 game demo
 教程地址：
 https://github.com/lwjglgamedev/lwjglbook
 
+增加实例化（分组）渲染方法
+    -增加InstancedMesh类，继承自Mesh，将共用一个Mesh的对象分为一组，进行分组绘制，优化性能
+    -修改Renderer类中的场景、深度图的渲染方法，以适应分组绘制
+    -修改Renderer类中的天空盒绘制方法，使其支持环境光，着色器一同修改
+    -修复了粒子渲染的Bug
+    -修改了Scene类，增加实例化（分组）Mesh、阴影绘制等属性，修复Bug
+    -修改了场景的点着色器和片段着色器，使其支持实例化渲染（深度图着色器一同修改了）
+    page280 - over
+    cp21-p1 - over
+    
+    2018-03-25
+
 更新joml库为最新版本
     -修改GameItem类中旋转属性为四元数
     -优化Transformation类，使用新的库函数
@@ -24,7 +36,7 @@ https://github.com/lwjglgamedev/lwjglbook
     修改视野旋转矩阵的生成方法，使其支持z轴旋转
     增加平行光角度2维旋转
 
-    2018-03-23
+    2018-03-22
 
 增加阴影支持
 

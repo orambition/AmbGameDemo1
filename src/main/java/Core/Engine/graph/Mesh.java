@@ -28,12 +28,12 @@ public class Mesh {
      * 每个vbo相当于一个属性
      * 如坐标、纹理、颜色、等*/
 
-    private final int vaoId;
+    protected final int vaoId;
 
     /*Vertex Buffer Object
      * 可以包含坐标、纹理、颜色、等信息
      * vbo是GPU内存中的存储单元，将要绘制的数据存入vbo opengl才可见*/
-    private final List<Integer> vboIdList;
+    protected final List<Integer> vboIdList;
 
     private final int vertexCount;//顶点数量
 
@@ -162,7 +162,7 @@ public class Mesh {
     public int getVertexCount() {
         return vertexCount;
     }
-    private void initRender() {
+    protected void initRender() {
         Texture texture = material.getTexture();
         if (texture != null){
             // 激活0号纹理单元
@@ -184,7 +184,7 @@ public class Mesh {
         glEnableVertexAttribArray(3);//启用数组3，对应权重
         glEnableVertexAttribArray(4);//对应关节id
     }
-    private void endRender() {
+    protected void endRender() {
         glDisableVertexAttribArray(0);//关闭数组1
         glDisableVertexAttribArray(1);//关闭数组2
         glDisableVertexAttribArray(2);//关闭数组3
@@ -237,13 +237,13 @@ public class Mesh {
         glDeleteVertexArrays(vaoId);
     }
     //创建空的浮点数组，用于创建没有动画的mesh时，提供默认的参数
-    private static float[] createEmptyFloatArray(int length, float defaultValue) {
+    protected static float[] createEmptyFloatArray(int length, float defaultValue) {
         float[] result = new float[length];
         Arrays.fill(result, defaultValue);
         return result;
     }
     //创建空的整数数组，同上
-    private static int[] createEmptyIntArray(int length, int defaultValue) {
+    protected static int[] createEmptyIntArray(int length, int defaultValue) {
         int[] result = new int[length];
         Arrays.fill(result, defaultValue);
         return result;

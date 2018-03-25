@@ -66,6 +66,7 @@ uniform Fog fog;//雾
 
 uniform sampler2D shadowMap;//阴影图，由深度着色器绘制得出
 
+uniform int renderShadow;//是否绘制阴影
 //全局变量
 vec4 ambientC;
 vec4 diffuseC;
@@ -149,6 +150,9 @@ vec3 calcNormal(Material material, vec3 normal, vec2 text_coord, mat4 modelViewM
 }
 //计算传入的位置是否在阴影中，是返回1否0
 float calcShadow(vec4 position){
+    if ( renderShadow == 0 ){
+        return 1.0;
+    }
     vec3 projCoords = position.xyz;
     // 从屏幕坐标转换到纹理坐标
     projCoords = projCoords * 0.5 + 0.5;

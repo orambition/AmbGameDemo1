@@ -1,5 +1,6 @@
 package Core.Engine;
 
+import Core.Engine.graph.InstancedMesh;
 import Core.Engine.graph.Mesh;
 import Core.Engine.graph.particles.IParticleEmitter;
 import Core.Engine.graph.weather.Fog;
@@ -15,28 +16,49 @@ import java.util.Map;
 //就是对这些信息进行同一管理
 public class Scene {
     private Map<Mesh,List<GameItem>> meshMap;//根据mesh存储gameitem，目的是优化渲染过程，不用每次都加载相同的mesh
+    private final Map<InstancedMesh, List<GameItem>> instancedMeshMap;//实例化（分组）渲染的item
     private SkyBox skyBox;//天空盒
     private SceneLight sceneLight;//灯光
     private Fog fog;//雾
+    private boolean renderShadows;//是否绘制阴影
     private IParticleEmitter[] particleEmitters;//粒子
     public Scene(){
         meshMap = new HashMap();
+        instancedMeshMap = new HashMap();
         fog = Fog.NOFOG;//场景都有雾，但默认雾是不开启的，有是因为着色器需要这个参数
+        renderShadows = true;
+    }
+    public boolean isRenderShadows() {
+        return renderShadows;
+    }
+    public void setRenderShadows(boolean renderShadows) {
+        this.renderShadows = renderShadows;
     }
     public Map<Mesh, List<GameItem>> getGameMeshes() {
         return meshMap;
     }
+    public Map<InstancedMesh, List<GameItem>> getGameInstancedMeshes() {
+        return instancedMeshMap;
+    }
+
     public void setGameItems(GameItem[] gameItems) {
         int numGameItems = gameItems != null ? gameItems.length : 0;
         for (int i=0; i<numGameItems; i++) {
             GameItem gameItem = gameItems[i];
-            Mesh mesh = gameItem.getMesh();
-            List<GameItem> list = meshMap.get(mesh);
-            if ( list == null ) {
-                list = new ArrayList<>();
-                meshMap.put(mesh, list);
+            Mesh[] meshes = gameItem.getMeshes();
+            for (Mesh mesh : meshes) {
+                boolean instancedMesh = mesh instanceof InstancedMesh;
+                List<GameItem> list = instancedMesh ? instancedMeshMap.get(mesh) : meshMap.get(mesh);
+                if (list == null) {
+                    list = new ArrayList<>();
+                    if (instancedMesh) {
+                        instancedMeshMap.put((InstancedMesh)mesh, list);
+                    } else {
+                        meshMap.put(mesh, list);
+                    }
+                }
+                list.add(gameItem);
             }
-            list.add(gameItem);
         }
     }
     public SkyBox getSkyBox() {

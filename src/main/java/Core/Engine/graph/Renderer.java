@@ -68,8 +68,10 @@ public class Renderer {
         depthShaderProgram.createVertexShader(Utils.loadResource("/shaders/depth_vertex.vs"));
         depthShaderProgram.createFragmentShader(Utils.loadResource("/shaders/depth_fragment.fs"));
         depthShaderProgram.link();
+        depthShaderProgram.createUniform("isInstanced");
+        depthShaderProgram.createUniform("jointsMatrix");
+        depthShaderProgram.createUniform("modelLightViewNonInstancedMatrix");
         depthShaderProgram.createUniform("orthoProjectionMatrix");
-        depthShaderProgram.createUniform("modelLightViewMatrix");
     }
     //创建场景着色器
     private void setupSceneShader() throws Exception {
@@ -81,7 +83,7 @@ public class Renderer {
 
         //为世界和投影矩阵 创建 Uniforms,vertex.vs的main中没有使用该值则会报错
         sceneShaderProgram.createUniform("projectionMatrix");
-        sceneShaderProgram.createUniform("modelViewMatrix");
+        sceneShaderProgram.createUniform("modelViewNonInstancedMatrix");
         sceneShaderProgram.createUniform("texture_sampler");
         //创建法线纹理uniform
         sceneShaderProgram.createUniform("normalMap");
@@ -99,9 +101,11 @@ public class Renderer {
         //创建阴影uniforms
         sceneShaderProgram.createUniform("shadowMap");
         sceneShaderProgram.createUniform("orthoProjectionMatrix");
-        sceneShaderProgram.createUniform("modelLightViewMatrix");
+        sceneShaderProgram.createUniform("modelLightViewNonInstancedMatrix");
+        sceneShaderProgram.createUniform("renderShadow");
         //创建关节信息uniform
         sceneShaderProgram.createUniform("jointsMatrix");
+        sceneShaderProgram.createUniform("isInstanced");
     }
     //创建粒子着色器
     private void setupParticlesShader() throws Exception {
@@ -129,7 +133,8 @@ public class Renderer {
         skyBoxShaderProgram.createUniform("modelViewMatrix");
         skyBoxShaderProgram.createUniform("texture_sampler");
         skyBoxShaderProgram.createUniform("ambientLight");
-
+        skyBoxShaderProgram.createUniform("colour");
+        skyBoxShaderProgram.createUniform("hasTexture");
     }
     //创建hud着色器
     private void setupHudShader() throws Exception {
@@ -168,42 +173,47 @@ public class Renderer {
     }
     //绘制深度图
     private void renderDepthMap(Window window, Camera camera, Scene scene) {
-        //绑定深度图fbo
-        glBindFramebuffer(GL_FRAMEBUFFER, shadowMap.getDepthMapFBO());
-        // 设置视野为深度图纹理的大小
-        glViewport(0, 0, ShadowMap.SHADOW_MAP_WIDTH, ShadowMap.SHADOW_MAP_HEIGHT);
-        glClear(GL_DEPTH_BUFFER_BIT);//清楚深度缓存的内容
-        //深度图着色器绑定
-        depthShaderProgram.bind();
-        DirectionalLight light = scene.getSceneLight().getDirectionalLight();//获取场景中的平行光
-        Vector3f lightDirection = light.getDirection();//光的方向
-        //转换平行光的方向，因为光的方向与物体方向不同，向量转为每轴旋转的角度
-        float lightAngleX = 90;
-        float lightAngleY = 0;
-        float lightAngleZ = 90-(float)Math.toDegrees(Math.acos(lightDirection.x));
-        //生产光源视野矩阵,生成平行光的位置，因为平光本身没有位置
-        Matrix4f lightViewMatrix = transformation.updateLightViewMatrix(new Vector3f(lightDirection).mul(light.getShadowPosMult()), new Vector3f(lightAngleX,lightAngleY,lightAngleZ));
-        DirectionalLight.OrthoCoords orthCoords = light.getOrthoCoords();//获取光源正交坐标
-        //生产光源正交矩阵
-        Matrix4f orthoProjMatrix = transformation.updateOrthoProjectionMatrix(orthCoords.left, orthCoords.right, orthCoords.bottom, orthCoords.top, orthCoords.near, orthCoords.far);
-        depthShaderProgram.setUniform("orthoProjectionMatrix", orthoProjMatrix);
-        Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
-        for (Mesh mesh : mapMeshes.keySet()) {
-            mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
-                        Matrix4f modelLightViewMatrix = transformation.buildModelViewMatrix(gameItem, lightViewMatrix);
-                        depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
-                        //如果是动画模型，则加载关键信息矩阵
-                        if ( gameItem instanceof AnimGameItem) {
-                            AnimGameItem animGameItem = (AnimGameItem)gameItem;
-                            AnimatedFrame frame = animGameItem.getCurrentFrame();
-                            sceneShaderProgram.setUniform("jointsMatrix", frame.getJointMatrices());
+        if (scene.isRenderShadows()) {
+            //绑定深度图fbo
+            glBindFramebuffer(GL_FRAMEBUFFER, shadowMap.getDepthMapFBO());
+            // 设置视野为深度图纹理的大小
+            glViewport(0, 0, ShadowMap.SHADOW_MAP_WIDTH, ShadowMap.SHADOW_MAP_HEIGHT);
+            glClear(GL_DEPTH_BUFFER_BIT);//清楚深度缓存的内容
+            //深度图着色器绑定
+            depthShaderProgram.bind();
+            DirectionalLight light = scene.getSceneLight().getDirectionalLight();//获取场景中的平行光
+            Vector3f lightDirection = light.getDirection();//光的方向
+            //转换平行光的方向，因为光的方向与物体方向不同，向量转为每轴旋转的角度
+            float lightAngleX = 90;
+            float lightAngleY = 0;
+            float lightAngleZ = 90 - (float) Math.toDegrees(Math.acos(lightDirection.x));
+            //生产光源视野矩阵,生成平行光的位置，因为平光本身没有位置
+            Matrix4f lightViewMatrix = transformation.updateLightViewMatrix(new Vector3f(lightDirection).mul(light.getShadowPosMult()), new Vector3f(lightAngleX, lightAngleY, lightAngleZ));
+            DirectionalLight.OrthoCoords orthCoords = light.getOrthoCoords();//获取光源正交坐标
+            //生产光源正交矩阵
+            Matrix4f orthoProjMatrix = transformation.updateOrthoProjectionMatrix(orthCoords.left, orthCoords.right, orthCoords.bottom, orthCoords.top, orthCoords.near, orthCoords.far);
+            depthShaderProgram.setUniform("orthoProjectionMatrix", orthoProjMatrix);
+
+            renderNonInstancedMeshes(scene, true, depthShaderProgram, null, lightViewMatrix);
+            renderInstancedMeshes(scene, true, depthShaderProgram, null, lightViewMatrix);
+            /*Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
+            for (Mesh mesh : mapMeshes.keySet()) {
+                mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
+                            Matrix4f modelLightViewMatrix = transformation.buildModelViewMatrix(gameItem, lightViewMatrix);
+                            depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                            //如果是动画模型，则加载关键信息矩阵
+                            if (gameItem instanceof AnimGameItem) {
+                                AnimGameItem animGameItem = (AnimGameItem) gameItem;
+                                AnimatedFrame frame = animGameItem.getCurrentFrame();
+                                sceneShaderProgram.setUniform("jointsMatrix", frame.getJointMatrices());
+                            }
                         }
-                    }
-            );
+                );
+            }*/
+            //深度图着色器解绑
+            depthShaderProgram.unbind();
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
-        //深度图着色器解绑
-        depthShaderProgram.unbind();
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     //绘制场景
     private void renderScene(Window window, Camera camera, Scene scene) {
@@ -233,8 +243,11 @@ public class Renderer {
         sceneShaderProgram.setUniform("normalMap", 1);
         //设置深度图单元，为显存中的2号，将深度图放入2号单元的操作在下面完成
         sceneShaderProgram.setUniform("shadowMap", 2);
+        sceneShaderProgram.setUniform("renderShadow", scene.isRenderShadows() ? 1 : 0);
 
-        //绘制每一个gameItem
+        renderNonInstancedMeshes(scene, false, sceneShaderProgram, viewMatrix, lightViewMatrix);
+        renderInstancedMeshes(scene, false, sceneShaderProgram, viewMatrix, lightViewMatrix);
+        /*//绘制每一个gameItem
         Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
         for (Mesh mesh : mapMeshes.keySet()) {
             sceneShaderProgram.setUniform("material", mesh.getMaterial());
@@ -258,8 +271,50 @@ public class Renderer {
             }
 
             );
-        }
+        }*/
         sceneShaderProgram.unbind();
+    }
+    //单数绘制函数
+    private void renderNonInstancedMeshes(Scene scene, boolean depthMap, ShaderProgram shader, Matrix4f viewMatrix, Matrix4f lightViewMatrix) {
+        shader.setUniform("isInstanced", 0);
+        // Render each mesh with the associated game Items
+        Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
+        for (Mesh mesh : mapMeshes.keySet()) {
+            if (!depthMap) {
+                shader.setUniform("material", mesh.getMaterial());
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMapTexture().getId());
+            }
+            mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
+                        Matrix4f modelMatrix = transformation.buildModelMatrix(gameItem);
+                        if (!depthMap) {
+                            Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(modelMatrix, viewMatrix);
+                            sceneShaderProgram.setUniform("modelViewNonInstancedMatrix", modelViewMatrix);
+                        }
+                        Matrix4f modelLightViewMatrix = transformation.buildModelLightViewMatrix(modelMatrix, lightViewMatrix);
+                        sceneShaderProgram.setUniform("modelLightViewNonInstancedMatrix", modelLightViewMatrix);
+                        if (gameItem instanceof AnimGameItem) {
+                            AnimGameItem animGameItem = (AnimGameItem) gameItem;
+                            AnimatedFrame frame = animGameItem.getCurrentFrame();
+                            shader.setUniform("jointsMatrix", frame.getJointMatrices());
+                        }
+                    }
+            );
+        }
+    }
+    //实例化（分组）绘制函数
+    private void renderInstancedMeshes(Scene scene, boolean depthMap, ShaderProgram shader, Matrix4f viewMatrix, Matrix4f lightViewMatrix) {
+        shader.setUniform("isInstanced", 1);
+        // Render each mesh with the associated game Items
+        Map<InstancedMesh, List<GameItem>> mapMeshes = scene.getGameInstancedMeshes();
+        for (InstancedMesh mesh : mapMeshes.keySet()) {
+            if (!depthMap) {
+                shader.setUniform("material", mesh.getMaterial());
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMapTexture().getId());
+            }
+            mesh.renderListInstanced(mapMeshes.get(mesh), depthMap, transformation, viewMatrix, lightViewMatrix);
+        }
     }
     //绘制光的函数，就是把相应的uniform填冲上相应的值
     private void renderLights(Matrix4f viewMatrix, SceneLight sceneLight) {
@@ -332,10 +387,10 @@ public class Renderer {
                 //为了让粒子不随摄像机转动，对其模型矩阵进行处理
                 Matrix4f modelMatrix = transformation.buildModelMatrix(gameItem);
                 //让其反向旋转（左乘？），然后在乘以视野矩阵
-                //viewMatrix.transpose3x3(modelMatrix);
+                viewMatrix.transpose3x3(modelMatrix);
                 //viewMatrix.scale(gameItem.getScale());
                 Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(modelMatrix, viewMatrix);
-                //modelViewMatrix.scale(gameItem.getScale());
+                modelViewMatrix.scale(gameItem.getScale());
                 particlesShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
             }
             );
@@ -372,7 +427,10 @@ public class Renderer {
             Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(skyBox, viewMatrix);
             skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
             skyBoxShaderProgram.setUniform("ambientLight", scene.getSceneLight().getAmbientLight());
-            scene.getSkyBox().getMesh().render();
+            Mesh mesh = skyBox.getMesh();
+            skyBoxShaderProgram.setUniform("colour", mesh.getMaterial().getAmbientColour());
+            skyBoxShaderProgram.setUniform("hasTexture", mesh.getMaterial().isTextured() ? 1 : 0);
+            mesh.render();
             /*viewMatrix.m30 = m30;
             viewMatrix.m31 = m31;
             viewMatrix.m32 = m32;*/
@@ -406,13 +464,22 @@ public class Renderer {
     }
     //
     public void cleanUp(){
-        if (skyBoxShaderProgram != null) {
+        if (skyBoxShaderProgram != null)
             skyBoxShaderProgram.cleanUp();
-        }
+
         if (sceneShaderProgram != null)
             sceneShaderProgram.cleanUp();
 
         if (hudShaderProgram != null)
             hudShaderProgram.cleanUp();
+
+        if (shadowMap != null)
+            shadowMap.cleanup();
+
+        if (depthShaderProgram != null)
+            depthShaderProgram.cleanUp();
+
+        if (particlesShaderProgram != null)
+            particlesShaderProgram.cleanUp();
     }
 }

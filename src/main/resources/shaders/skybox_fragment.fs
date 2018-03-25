@@ -7,7 +7,13 @@ out vec4 fragColor;
 
 uniform sampler2D texture_sampler;
 uniform vec3 ambientLight;
+uniform vec4 colour;
+uniform int hasTexture;
 
 void main(){
-    fragColor = vec4(ambientLight, 1) * texture(texture_sampler, outTexCoord);
+    if ( hasTexture == 1 ){
+        fragColor = vec4(ambientLight, 1) * texture(texture_sampler, outTexCoord);
+    }else{
+        fragColor = colour;
+    }
 }
