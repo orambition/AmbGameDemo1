@@ -357,19 +357,28 @@ public class Renderer {
 
             Matrix4f viewMatrix = transformation.getViewMatrix();
             //天空盒并不随着摄像机移动，所以将xyz的变化设置为0
-            float m30 = viewMatrix.m30;
+            /*float m30 = viewMatrix.m30;
             viewMatrix.m30 = 0;
             float m31 = viewMatrix.m31;
             viewMatrix.m31 = 0;
             float m32 = viewMatrix.m32;
-            viewMatrix.m32 = 0;
+            viewMatrix.m32 = 0;*/
+            float m30 = viewMatrix.m30();
+            viewMatrix.m30(0);
+            float m31 = viewMatrix.m31();
+            viewMatrix.m31(0);
+            float m32 = viewMatrix.m32();
+            viewMatrix.m32(0);
             Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(skyBox, viewMatrix);
             skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
             skyBoxShaderProgram.setUniform("ambientLight", scene.getSceneLight().getAmbientLight());
             scene.getSkyBox().getMesh().render();
-            viewMatrix.m30 = m30;
+            /*viewMatrix.m30 = m30;
             viewMatrix.m31 = m31;
-            viewMatrix.m32 = m32;
+            viewMatrix.m32 = m32;*/
+            viewMatrix.m30(m30);
+            viewMatrix.m31(m31);
+            viewMatrix.m32(m32);
             skyBoxShaderProgram.unbind();
         }
     }

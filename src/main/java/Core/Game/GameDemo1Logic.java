@@ -14,6 +14,7 @@ import Core.Engine.loaders.md5.MD5AnimModel;
 import Core.Engine.loaders.md5.MD5Loader;
 import Core.Engine.loaders.md5.MD5Model;
 import Core.Engine.loaders.obj.OBJLoader;
+import org.joml.Quaternionf;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -89,7 +90,7 @@ public class GameDemo1Logic implements IGameLogic {
         demo4GameItem = MD5Loader.process(md5Model,md5AnimModel,new Vector4f(1,1,1,1));
         demo4GameItem.setScale(0.2f);
         demo4GameItem.setPosition(demoItemX, demoItemY,demoItemZ);
-        demo4GameItem.setRotation(90f,0f,-90f);
+        demo4GameItem.setRotation(new Quaternionf(90f,0f,-90f,0));
 
         //加载物体
         GameItem[] gameItems = new GameItem[temp.length+2];

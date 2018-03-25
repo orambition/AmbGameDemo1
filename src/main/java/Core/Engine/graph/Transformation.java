@@ -8,6 +8,7 @@ package Core.Engine.graph;
 
 import Core.Engine.items.GameItem;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public class Transformation {
@@ -17,18 +18,14 @@ public class Transformation {
 
     private final Matrix4f viewMatrix;//摄像机视野矩阵
     private final Matrix4f lightViewMatrix;//光源视野矩阵
-
     private final Matrix4f modelMatrix;//模型矩阵，用于缩放、旋转、移动模型本身
-    private final Matrix4f modelViewMatrix;//模型*摄像机视野矩阵
 
-    private final Matrix4f modelLightMatrix;//模型矩阵，同上，用于绘制深度图
+    private final Matrix4f modelViewMatrix;//模型*摄像机视野矩阵
     private final Matrix4f modelLightViewMatrix;//模型*光源视野矩阵
 
     private final Matrix4f ortho2DMatrix;//2d的正交矩阵，用于绘制hud
+    private final Matrix4f orthoModelMatrix;//模型*正交矩阵
 
-    private static final Vector3f X_AXIS = new Vector3f(1, 0, 0);
-    private static final Vector3f Y_AXIS = new Vector3f(0, 1, 0);
-    private static final Vector3f Z_AXIS = new Vector3f(0, 0, 1);
     public Transformation() {
         projectionMatrix = new Matrix4f();
         orthoProjMatrix = new Matrix4f();
@@ -39,10 +36,10 @@ public class Transformation {
         modelMatrix = new Matrix4f();
         modelViewMatrix = new Matrix4f();
 
-        modelLightMatrix = new Matrix4f();
         modelLightViewMatrix = new Matrix4f();
 
         ortho2DMatrix = new Matrix4f();
+        orthoModelMatrix = new Matrix4f();
     }
 
     //获取透视矩阵。
@@ -52,9 +49,7 @@ public class Transformation {
     //生成透视矩阵，将三维坐标近大远小的投影到二位屏幕上
     public final Matrix4f updateProjectionMatrix(float fov, float width, float height, float zNear, float zFar) {
         float aspectRatio = width / height;
-        projectionMatrix.identity();
-        projectionMatrix.perspective(fov, aspectRatio, zNear, zFar);
-        return projectionMatrix;
+        return projectionMatrix.identity().perspective(fov, aspectRatio, zNear, zFar);
     }
 
     //获取正交矩阵。
@@ -63,21 +58,23 @@ public class Transformation {
     }
     //生成正交矩阵
     public Matrix4f updateOrthoProjectionMatrix(float left, float right, float bottom, float top, float zNear, float zFar) {
-        orthoProjMatrix.identity();
-        orthoProjMatrix.setOrtho(left, right, bottom, top, zNear, zFar);
-        return orthoProjMatrix;
+        return orthoProjMatrix.identity().setOrtho(left, right, bottom, top, zNear, zFar);
     }
 
     //通用的视野矩阵生成函数
     private Matrix4f updateGenericViewMatrix(Vector3f position, Vector3f rotation, Matrix4f matrix) {
-        matrix.identity();
+        return matrix.identity().rotationX((float)Math.toRadians(rotation.x))
+                .rotateY((float)Math.toRadians(rotation.y))
+                .rotateZ((float)Math.toRadians(rotation.z))
+                .translate(-position.x, -position.y, -position.z);
+        /*matrix.identity();
         // 首先旋转，使摄像机旋转到该方向。
         matrix.rotate((float)Math.toRadians(rotation.x), X_AXIS)
                 .rotate((float)Math.toRadians(rotation.y), Y_AXIS)
                 .rotate((float)Math.toRadians(rotation.z), Z_AXIS);
         // 让后移动到该位置，相机移动x的距离，就是物体移动-x的距离，相机是不动的，动的是世界
         matrix.translate(-position.x, -position.y, -position.z);
-        return matrix;
+        return matrix;*/
     }
     // 获取摄像机视野矩阵
     public Matrix4f getViewMatrix() {
@@ -98,46 +95,44 @@ public class Transformation {
 
     //生成物体矩阵
     public Matrix4f buildModelMatrix(GameItem gameItem) {
-        Vector3f rotation = gameItem.getRotation();
-        modelMatrix.identity().translate(gameItem.getPosition()).
+        Quaternionf rotation = gameItem.getRotation();
+        return modelMatrix.identity().translate(gameItem.getPosition()).
                 rotateX((float)Math.toRadians(-rotation.x)).
                 rotateY((float)Math.toRadians(-rotation.y)).
                 rotateZ((float)Math.toRadians(-rotation.z)).
                 scale(gameItem.getScale());
-        return modelMatrix;
     }
     //将物体矩阵与视野矩阵相乘
     public Matrix4f buildModelViewMatrix(Matrix4f modelMatrix, Matrix4f viewMatrix) {
-        modelViewMatrix.set(viewMatrix);
-        return modelViewMatrix.mul(modelMatrix);
+        //return modelViewMatrix.set(viewMatrix).mul(modelMatrix);
+        return viewMatrix.mulAffine(modelMatrix, modelViewMatrix);
     }
-    //同上，将物体的位置矩阵与参数中的视野矩阵相乘，因为视野会影响物体的显示坐标，所以需要进行改处理
-    public Matrix4f buildModelViewMatrix(GameItem gameItem, Matrix4f matrix) {
-        Vector3f rotation = gameItem.getRotation();
+    //将物体的位置矩阵与参数中的视野矩阵相乘，因为视野会影响物体的显示坐标，所以需要进行改处理
+    public Matrix4f buildModelViewMatrix(GameItem gameItem, Matrix4f viewMatrix) {
+        return buildModelViewMatrix(buildModelMatrix(gameItem), viewMatrix);
+        /*Vector3f rotation = gameItem.getRotation();
         modelMatrix.identity().translate(gameItem.getPosition()).
                 rotateX((float)Math.toRadians(-rotation.x)).
                 rotateY((float)Math.toRadians(-rotation.y)).
                 rotateZ((float)Math.toRadians(-rotation.z)).
                 scale(gameItem.getScale());
-        modelViewMatrix.set(matrix);
-        return modelViewMatrix.mul(modelMatrix);
+        modelViewMatrix.set(viewMatrix);
+        return modelViewMatrix.mul(modelMatrix);*/
     }
-
-
     //将物体的位置矩阵与参数中的光源视野矩阵相乘
-    public Matrix4f buildModelLightViewMatrix(GameItem gameItem, Matrix4f matrix) {
-        Vector3f rotation = gameItem.getRotation();
-        modelLightMatrix.identity().translate(gameItem.getPosition()).
-                rotateX((float)Math.toRadians(-rotation.x)).
-                rotateY((float)Math.toRadians(-rotation.y)).
-                rotateZ((float)Math.toRadians(-rotation.z)).
-                scale(gameItem.getScale());
-        modelLightViewMatrix.set(matrix);
-        return modelLightViewMatrix.mul(modelLightMatrix);
+    public Matrix4f buildModelLightViewMatrix(Matrix4f modelMatrix, Matrix4f lightViewMatrix) {
+        //return modelLightViewMatrix.set(lightViewMatrix).mul(modelMatrix);
+        return lightViewMatrix.mulAffine(modelMatrix, modelLightViewMatrix);
+    }
+    //将物体的位置矩阵与参数中的光源视野矩阵相乘
+    public Matrix4f buildModelLightViewMatrix(GameItem gameItem, Matrix4f lightViewMatrix) {
+        return buildModelViewMatrix(buildModelMatrix(gameItem), lightViewMatrix);
     }
     //将物体的位置矩阵与参数中的正交矩阵相乘
     public Matrix4f buildOrtoProjModelMatrix(GameItem gameItem, Matrix4f orthoMatrix) {
-        Vector3f rotation = gameItem.getRotation();
+        return orthoMatrix.mulOrthoAffine(buildModelMatrix(gameItem), orthoModelMatrix);
+        //return orthoModelMatrix.set(orthoMatrix).mul(buildModelMatrix(gameItem));
+        /*Vector3f rotation = gameItem.getRotation();
         Matrix4f modelMatrix = new Matrix4f();
         modelMatrix.identity().translate(gameItem.getPosition()).
                 rotateX((float)Math.toRadians(-rotation.x)).
@@ -146,12 +141,11 @@ public class Transformation {
                 scale(gameItem.getScale());
         Matrix4f orthoMatrixCurr = new Matrix4f(orthoMatrix);
         orthoMatrixCurr.mul(modelMatrix);
-        return orthoMatrixCurr;
+        return orthoMatrixCurr;*/
     }
     //获取特定的2d正交矩阵，该矩阵无纵向属性，用于绘制hud等
     public final Matrix4f getOrtho2DProjectionMatrix(float left, float right, float bottom, float top) {
-        ortho2DMatrix.identity();
-        ortho2DMatrix.setOrtho2D(left, right, bottom, top);
+        ortho2DMatrix.identity().setOrtho2D(left, right, bottom, top);
         return ortho2DMatrix;
     }
 }

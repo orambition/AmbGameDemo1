@@ -7,6 +7,7 @@ import Core.Engine.items.TextItem;
 import Core.Engine.Window;
 import Core.Engine.graph.*;
 import Core.Engine.loaders.obj.OBJLoader;
+import org.joml.Quaternionf;
 import org.joml.Vector4f;
 
 import java.awt.*;
@@ -36,7 +37,7 @@ public class Hud implements IHud{
         compassItem = new GameItem(mesh);
         compassItem.setScale(40.0f);
         // 修正罗盘角度
-        compassItem.setRotation(0f, 0f, 180f);
+        compassItem.setRotation(new Quaternionf(0f, 0f, 180f,0));
 
         gameItems = new GameItem[]{statusTextItem, compassItem};
     }
@@ -44,7 +45,7 @@ public class Hud implements IHud{
         this.statusTextItem.setText(statusText);
     }
     public void rotateCompass(float angle) {
-        this.compassItem.setRotation(0, 0, 180 + angle);
+        this.compassItem.setRotation(new Quaternionf(0, 0, 180 + angle,0));
     }
     @Override
     public GameItem[] getGameItems() {

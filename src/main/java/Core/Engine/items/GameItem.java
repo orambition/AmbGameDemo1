@@ -1,6 +1,8 @@
 package Core.Engine.items;
 /*模型信息类*/
+
 import Core.Engine.graph.Mesh;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public class GameItem {
@@ -11,12 +13,12 @@ public class GameItem {
     //缩放
     private float scale;
     //旋转
-    private final Vector3f rotation;//方向旋转由于计算矩阵过程中是右乘的，所以顺序是zyx
+    private final Quaternionf rotation;//方向旋转由于计算矩阵过程中是右乘的，所以顺序是zyx
     private int textPos;//纹理中块的位置，纹理分为行列之后新增的属性，纹理默认不分割，默认为0就是整个纹理，
     public GameItem() {
         position = new Vector3f(0, 0, 0);
         scale = 1;
-        rotation = new Vector3f(0, 0, 0);
+        rotation = new Quaternionf();
         textPos = 0;
     }
     public GameItem(Mesh mesh) {
@@ -53,14 +55,12 @@ public class GameItem {
         this.scale = scale;
     }
 
-    public Vector3f getRotation() {
+    public Quaternionf getRotation() {
         return rotation;
     }
 
-    public void setRotation(float x, float y, float z) {
-        this.rotation.x = x;
-        this.rotation.y = y;
-        this.rotation.z = z;
+    public void setRotation(Quaternionf q) {
+        this.rotation.set(q);
     }
 
     public Mesh getMesh() {

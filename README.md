@@ -3,6 +3,13 @@ based on lwjgl3 game demo
 教程地址：
 https://github.com/lwjglgamedev/lwjglbook
 
+更新joml库为最新版本
+    -修改GameItem类中旋转属性为四元数
+    -优化Transformation类，使用新的库函数
+    -修改render类中天空盒渲染方法，以适应新的库函数
+    
+    2018-03-24
+
 增加粒子支持
     -增加粒子类、粒子发生器类
     -增加粒子着色器，修改相应的render方法
