@@ -91,7 +91,7 @@ public class FlowParticleEmitter implements IParticleEmitter {
         Iterator<? extends GameItem> it = particles.iterator();
         while (it.hasNext()) {
             Particle particle = (Particle) it.next();
-            if (particle.updateTtl(elapsedTime) < 0) {
+            if (particle.updateTtl(elapsedTime) < 0) {//粒子更新
                 it.remove();//过期移除，使用迭代器的原因
             } else {
                 updatePosition(particle, elapsedTime);//更新位置

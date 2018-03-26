@@ -105,7 +105,10 @@ public class Renderer {
         sceneShaderProgram.createUniform("renderShadow");
         //创建关节信息uniform
         sceneShaderProgram.createUniform("jointsMatrix");
+
         sceneShaderProgram.createUniform("isInstanced");
+        sceneShaderProgram.createUniform("numCols");
+        sceneShaderProgram.createUniform("numRows");
     }
     //创建粒子着色器
     private void setupParticlesShader() throws Exception {
@@ -114,11 +117,8 @@ public class Renderer {
         particlesShaderProgram.createFragmentShader(Utils.loadResource("/shaders/particles_fragment.fs"));
         particlesShaderProgram.link();
         particlesShaderProgram.createUniform("projectionMatrix");
-        particlesShaderProgram.createUniform("modelViewMatrix");
         particlesShaderProgram.createUniform("texture_sampler");
 
-        particlesShaderProgram.createUniform("texXOffset");
-        particlesShaderProgram.createUniform("texYOffset");
         particlesShaderProgram.createUniform("numCols");
         particlesShaderProgram.createUniform("numRows");
     }
@@ -194,8 +194,8 @@ public class Renderer {
             Matrix4f orthoProjMatrix = transformation.updateOrthoProjectionMatrix(orthCoords.left, orthCoords.right, orthCoords.bottom, orthCoords.top, orthCoords.near, orthCoords.far);
             depthShaderProgram.setUniform("orthoProjectionMatrix", orthoProjMatrix);
 
-            renderNonInstancedMeshes(scene, true, depthShaderProgram, null, lightViewMatrix);
-            renderInstancedMeshes(scene, true, depthShaderProgram, null, lightViewMatrix);
+            renderNonInstancedMeshes(scene,depthShaderProgram, null, lightViewMatrix);
+            renderInstancedMeshes(scene, depthShaderProgram, null, lightViewMatrix);
             /*Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
             for (Mesh mesh : mapMeshes.keySet()) {
                 mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
@@ -245,8 +245,8 @@ public class Renderer {
         sceneShaderProgram.setUniform("shadowMap", 2);
         sceneShaderProgram.setUniform("renderShadow", scene.isRenderShadows() ? 1 : 0);
 
-        renderNonInstancedMeshes(scene, false, sceneShaderProgram, viewMatrix, lightViewMatrix);
-        renderInstancedMeshes(scene, false, sceneShaderProgram, viewMatrix, lightViewMatrix);
+        renderNonInstancedMeshes(scene, sceneShaderProgram, viewMatrix, lightViewMatrix);
+        renderInstancedMeshes(scene, sceneShaderProgram, viewMatrix, lightViewMatrix);
         /*//绘制每一个gameItem
         Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
         for (Mesh mesh : mapMeshes.keySet()) {
@@ -275,45 +275,55 @@ public class Renderer {
         sceneShaderProgram.unbind();
     }
     //单数绘制函数
-    private void renderNonInstancedMeshes(Scene scene, boolean depthMap, ShaderProgram shader, Matrix4f viewMatrix, Matrix4f lightViewMatrix) {
+    private void renderNonInstancedMeshes(Scene scene, ShaderProgram shader, Matrix4f viewMatrix, Matrix4f lightViewMatrix) {
         shader.setUniform("isInstanced", 0);
         // Render each mesh with the associated game Items
         Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
         for (Mesh mesh : mapMeshes.keySet()) {
-            if (!depthMap) {
+            if (viewMatrix != null) {//摄像机渲染时增加材质和阴影
                 shader.setUniform("material", mesh.getMaterial());
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMapTexture().getId());
             }
+            Texture text = mesh.getMaterial().getTexture();
+            if (text != null) {//如果存在纹理则设置纹理行列数
+                sceneShaderProgram.setUniform("numCols", text.getNumCols());
+                sceneShaderProgram.setUniform("numRows", text.getNumRows());
+            }
             mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
-                        Matrix4f modelMatrix = transformation.buildModelMatrix(gameItem);
-                        if (!depthMap) {
-                            Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(modelMatrix, viewMatrix);
-                            sceneShaderProgram.setUniform("modelViewNonInstancedMatrix", modelViewMatrix);
-                        }
-                        Matrix4f modelLightViewMatrix = transformation.buildModelLightViewMatrix(modelMatrix, lightViewMatrix);
-                        sceneShaderProgram.setUniform("modelLightViewNonInstancedMatrix", modelLightViewMatrix);
-                        if (gameItem instanceof AnimGameItem) {
-                            AnimGameItem animGameItem = (AnimGameItem) gameItem;
-                            AnimatedFrame frame = animGameItem.getCurrentFrame();
-                            shader.setUniform("jointsMatrix", frame.getJointMatrices());
-                        }
-                    }
-            );
+                Matrix4f modelMatrix = transformation.buildModelMatrix(gameItem);
+                if (viewMatrix != null) {
+                    Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(modelMatrix, viewMatrix);
+                    sceneShaderProgram.setUniform("modelViewNonInstancedMatrix", modelViewMatrix);
+                }
+                Matrix4f modelLightViewMatrix = transformation.buildModelLightViewMatrix(modelMatrix, lightViewMatrix);
+                shader.setUniform("modelLightViewNonInstancedMatrix", modelLightViewMatrix);
+                if (gameItem instanceof AnimGameItem) {
+                    AnimGameItem animGameItem = (AnimGameItem) gameItem;
+                    AnimatedFrame frame = animGameItem.getCurrentFrame();
+                    shader.setUniform("jointsMatrix", frame.getJointMatrices());
+                }
+            });
         }
     }
     //实例化（分组）绘制函数
-    private void renderInstancedMeshes(Scene scene, boolean depthMap, ShaderProgram shader, Matrix4f viewMatrix, Matrix4f lightViewMatrix) {
-        shader.setUniform("isInstanced", 1);
+    private void renderInstancedMeshes(Scene scene, ShaderProgram shader, Matrix4f viewMatrix, Matrix4f lightViewMatrix) {
+
+        sceneShaderProgram.setUniform("isInstanced", 1);
         // Render each mesh with the associated game Items
         Map<InstancedMesh, List<GameItem>> mapMeshes = scene.getGameInstancedMeshes();
         for (InstancedMesh mesh : mapMeshes.keySet()) {
-            if (!depthMap) {
+            Texture text = mesh.getMaterial().getTexture();
+            if (text != null) {//如果存在纹理则设置纹理行列数
+                sceneShaderProgram.setUniform("numCols", text.getNumCols());
+                sceneShaderProgram.setUniform("numRows", text.getNumRows());
+            }
+            if (viewMatrix != null) {//摄像机渲染时增加材质和阴影
                 shader.setUniform("material", mesh.getMaterial());
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMapTexture().getId());
             }
-            mesh.renderListInstanced(mapMeshes.get(mesh), depthMap, transformation, viewMatrix, lightViewMatrix);
+            mesh.renderListInstanced(mapMeshes.get(mesh), transformation, viewMatrix, lightViewMatrix);
         }
     }
     //绘制光的函数，就是把相应的uniform填冲上相应的值
@@ -367,16 +377,19 @@ public class Renderer {
         Matrix4f viewMatrix = transformation.getViewMatrix();
         IParticleEmitter[] emitters = scene.getParticleEmitters();
         int numEmitters = emitters != null ? emitters.length : 0;
+
         glDepthMask(false);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
         for (int i = 0; i < numEmitters; i++) {
             IParticleEmitter emitter = emitters[i];
-            Mesh mesh = emitter.getBaseParticle().getMesh();
+            InstancedMesh mesh = (InstancedMesh)emitter.getBaseParticle().getMesh();
             Texture text = mesh.getMaterial().getTexture();
             particlesShaderProgram.setUniform("numCols", text.getNumCols());
             particlesShaderProgram.setUniform("numRows", text.getNumRows());
-
-            mesh.renderList((emitter.getParticles()), (GameItem gameItem) -> {
+            //billBorad=true为粒子渲染
+            mesh.renderListInstanced(emitter.getParticles(), true, transformation, viewMatrix, null);
+            /*mesh.renderList((emitter.getParticles()), (GameItem gameItem) -> {
                 int col = gameItem.getTextPos() % text.getNumCols();
                 int row = gameItem.getTextPos() / text.getNumCols();
                 float textXOffset = (float) col / text.getNumCols();
@@ -392,8 +405,7 @@ public class Renderer {
                 Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(modelMatrix, viewMatrix);
                 modelViewMatrix.scale(gameItem.getScale());
                 particlesShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
-            }
-            );
+            });*/
         }
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDepthMask(true);

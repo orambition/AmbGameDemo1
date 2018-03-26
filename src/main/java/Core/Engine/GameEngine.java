@@ -10,12 +10,16 @@ public class GameEngine implements Runnable {
     private final IGameLogic gameLogic;
     private final MouseInput mouseInput;
 
+    private double lastFps;
+    private int fps;
+    private String windowTitle;
     //不传入窗口大小时，以全屏进行显示
     public GameEngine(String windowTitle, boolean vSync, Window.WindowOptions opts, IGameLogic gameLogic) throws Exception {
         this(windowTitle, 0, 0, vSync, opts, gameLogic);
     }
     //窗口化运行
     public GameEngine(String windowTitle, int width, int height, boolean vsSync, Window.WindowOptions opts,IGameLogic gameLogic)throws Exception{
+        this.windowTitle = windowTitle;
         gameLoopThread = new Thread(this,"GAME_LOOP_THREAD");
 
         window = new Window(windowTitle,width,height,vsSync,opts);
@@ -49,6 +53,9 @@ public class GameEngine implements Runnable {
         timer.init();
         mouseInput.init(window);
         gameLogic.init(window);
+
+        lastFps = timer.getTime();
+        fps = 0;
     }
     private void gameLoop(){
         float interval = 1.0f/Target_UPS;
@@ -64,9 +71,7 @@ public class GameEngine implements Runnable {
 
             //使游戏状态的处理速度恒定，与运行设备无关
             while (accumulator >= interval){
-
                 update(interval);
-
                 accumulator -= interval;
             }
 
@@ -105,6 +110,12 @@ public class GameEngine implements Runnable {
         gameLogic.update(interval,mouseInput);
     }
     protected void render(float alpha){
+        if ( window.getWindowOptions().showFps && timer.getLastLoopTime() - lastFps > 1 ) {
+            lastFps = timer.getLastLoopTime();
+            window.setWindowTitle(windowTitle + " - " + fps + " FPS");
+            fps = 0;
+        }
+        fps++;
         //alpha是当前渲染帧在游戏状态帧的比率（用于计算插值，需要预言函数）
         gameLogic.render(window);
         window.update();

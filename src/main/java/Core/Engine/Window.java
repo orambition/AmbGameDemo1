@@ -152,9 +152,19 @@ public class Window {
         glfwFreeCallbacks(windowHandle);
         glfwDestroyWindow(windowHandle);
     }
+
+    public WindowOptions getWindowOptions() {
+        return opts;
+    }
+
+    public void setWindowTitle(String title) {
+        glfwSetWindowTitle(windowHandle, title);
+    }
+
     //窗口设置内部类
     public static class WindowOptions {
         public boolean cullFace;
         public boolean showTriangles;
+        public boolean showFps;
     }
 }

@@ -10,14 +10,9 @@ import Core.Engine.graph.weather.Fog;
 import Core.Engine.items.GameItem;
 import Core.Engine.items.SkyBox;
 import Core.Engine.items.Terrain;
-import Core.Engine.loaders.md5.MD5AnimModel;
-import Core.Engine.loaders.md5.MD5Loader;
-import Core.Engine.loaders.md5.MD5Model;
 import Core.Engine.loaders.obj.OBJLoader;
-import org.joml.Quaternionf;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -72,8 +67,7 @@ public class GameDemo1Logic implements IGameLogic {
         GameItem[] temp = terrain.getGameItems();
 
         /**示例代码 - 开始*/
-        //创建物体 方块
-
+        /*//创建物体 方块
         Mesh quadMesh = OBJLoader.loadMesh("/models/cube.obj");
         Texture texture = new Texture("/textures/texture1.png");
         Texture normalMap = new Texture("/textures/texture1_NORM.png");
@@ -82,9 +76,10 @@ public class GameDemo1Logic implements IGameLogic {
         quadMesh.setMaterial(quadMaterial1);
         quadGameItem1 = new GameItem(quadMesh);
         quadGameItem1.setPosition(0f, 0f, 0f);
-        quadGameItem1.setScale(0.5f);
+        quadGameItem1.setScale(0.5f);*/
 
-        //加载md5
+
+        /*//加载md5
         MD5Model md5Model = MD5Model.parse("/models/test.md5mesh");
         MD5AnimModel md5AnimModel = MD5AnimModel.parse("/models/test.md5anim");
         demo4GameItem = MD5Loader.process(md5Model,md5AnimModel,new Vector4f(1,1,1,1));
@@ -96,9 +91,9 @@ public class GameDemo1Logic implements IGameLogic {
         GameItem[] gameItems = new GameItem[temp.length+2];
         System.arraycopy(temp,0,gameItems,0,temp.length);
         gameItems[temp.length] = quadGameItem1;
-        gameItems[temp.length+1] = demo4GameItem;
+        gameItems[temp.length+1] = demo4GameItem;*/
 
-        scene.setGameItems(gameItems);
+        //scene.setGameItems(gameItems);
         /**示例代码 - 结束*/
 
         //添加粒子
@@ -108,18 +103,21 @@ public class GameDemo1Logic implements IGameLogic {
         int maxParticles = 200;
         long creationPeriodMillis = 300;
         float range = 0.2f;
-        Mesh partMesh = OBJLoader.loadMesh("/models/particle.obj");
-        texture = new Texture("/textures/particle_anim.png",4,4);
+        Mesh partMesh = OBJLoader.loadMesh("/models/particle.obj",maxParticles);
+        Texture texture = new Texture("/textures/particle_anim.png",4,4);
         Material partMaterial = new Material(texture,10f);
         partMesh.setMaterial(partMaterial);
-        Particle particle = new Particle(partMesh,particleSpeed,ttl,100);
+        Particle particle = new Particle(partMesh,particleSpeed,ttl,80);
         particle.setScale(1f);
         particleEmitter = new FlowParticleEmitter(particle,maxParticles,creationPeriodMillis);
         particleEmitter.setActive(true);
         particleEmitter.setPositionRndRange(range);
         particleEmitter.setSpeedRndRange(range);
+        particleEmitter.setAnimRange(10);
         this.scene.setParticleEmitters(new FlowParticleEmitter[] {particleEmitter});
 
+        //渲染阴影
+        scene.setRenderShadows(false);
         //开启雾
         scene.setFog(new Fog(true, new Vector3f(0.3f, 0.3f, 0.3f), 0.05f));
 
@@ -221,12 +219,8 @@ public class GameDemo1Logic implements IGameLogic {
         }else if ( camera.getPosition().y > height )  {
             //camera.movePosition(0,-2*CAMERA_POS_STEP,0);
         }
-        demo4GameItem.getPosition().x=demoItemX;
-        //demo4GameItem.getPosition().y=demoItemY;
-        demo4GameItem.getPosition().z=demoItemZ;
-        quadGameItem1.getPosition().x=-demoItemX;
-        //quadGameItem1.getPosition().y=-demoItemY;
-        quadGameItem1.getPosition().z=-demoItemZ;
+        /*demo4GameItem.getPosition().x=demoItemX;
+        demo4GameItem.getPosition().z=demoItemZ;*/
         //更新场景灯光
         SceneLight sceneLight = this.scene.getSceneLight();
         //更新平行光的角度，模拟太阳

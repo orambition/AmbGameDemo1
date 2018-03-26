@@ -65,7 +65,6 @@ uniform DirectionalLight directionalLight;//平行光源
 uniform Fog fog;//雾
 
 uniform sampler2D shadowMap;//阴影图，由深度着色器绘制得出
-
 uniform int renderShadow;//是否绘制阴影
 //全局变量
 vec4 ambientC;

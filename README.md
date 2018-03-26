@@ -3,6 +3,18 @@ based on lwjgl3 game demo
 教程地址：
 https://github.com/lwjglgamedev/lwjglbook
 
+完善实例化（分组）渲染方法
+    -支持粒子的分组渲染，将纹理块的选择添加为分组渲染的属性
+    -修改InstancedMesh类，将模型*视野矩阵和模型*光视野矩阵、纹理坐标整合为一个VBO
+    -修改Renderer类以支持分组渲染
+    -修改场景着色器和粒子着色器，以支持分组的纹理坐标
+增加FPS显示
+    -修改窗口、引擎、Main函数以支持FPS显示
+    page283 - over
+    cp21-p2 - over
+    
+    2018-03-26
+
 增加实例化（分组）渲染方法
     -增加InstancedMesh类，继承自Mesh，将共用一个Mesh的对象分为一组，进行分组绘制，优化性能
     -修改Renderer类中的场景、深度图的渲染方法，以适应分组绘制
@@ -10,6 +22,7 @@ https://github.com/lwjglgamedev/lwjglbook
     -修复了粒子渲染的Bug
     -修改了Scene类，增加实例化（分组）Mesh、阴影绘制等属性，修复Bug
     -修改了场景的点着色器和片段着色器，使其支持实例化渲染（深度图着色器一同修改了）
+    -修改了OBJLoader类使其可以创建实例化（分组）对象
     page280 - over
     cp21-p1 - over
     

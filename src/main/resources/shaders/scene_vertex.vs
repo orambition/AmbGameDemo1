@@ -11,6 +11,7 @@ layout (location=4) in ivec4 jointIndices;//关节id
 //用于实例化（分组）绘制的矩阵数组
 layout (location=5) in mat4 modelViewInstancedMatrix;//模型*摄像机矩阵
 layout (location=9) in mat4 modelLightViewInstancedMatrix;//模型*灯光视野
+layout (location=13) in vec2 texOffset;//纹理起始位置
 
 out vec2 outTexCoord;//将颜色传递给片段着色器
 out vec3 mvVertexNormal;//顶点法线
@@ -21,6 +22,8 @@ out mat4 outModelViewMatrix;//模型*视野矩阵，为了实现法线纹理，�
 uniform mat4 jointsMatrix[MAX_JOINTS];//关节信息数组
 uniform mat4 projectionMatrix;//透视矩阵
 uniform mat4 orthoProjectionMatrix;//正交矩阵
+uniform int numCols;//纹理的行列数
+uniform int numRows;
 
 uniform int isInstanced;//是否是实例化（分组）渲染的对象，数组是组内的对象数量
 //非实例化渲染的矩阵（不是数组）
@@ -59,7 +62,11 @@ void main(){
     }
     vec4 mvPos = modelViewMatrix * initPos;
     gl_Position = projectionMatrix * mvPos;
-    outTexCoord = texCoord;
+    // Support for texture atlas, update texture coordinates
+    float x = (texCoord.x / numCols + texOffset.x);
+    float y = (texCoord.y / numRows + texOffset.y);
+    outTexCoord = vec2(x, y);
+
     mvVertexNormal = normalize(modelViewMatrix * initNormal).xyz;
     mvVertexPos = mvPos.xyz;
     mlightviewVertexPos = orthoProjectionMatrix * lightViewMatrix * initPos;//光视野矩阵下的位置，用于绘制阴影
