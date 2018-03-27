@@ -109,6 +109,7 @@ public class InstancedMesh extends Mesh {
         endRender();
     }
     private void renderChunkInstanced(List<GameItem> gameItems, boolean billBoard, Transformation transformation, Matrix4f viewMatrix, Matrix4f lightViewMatrix) {
+
         this.instanceDataBuffer.clear();
         int i = 0;
         Texture text = getMaterial().getTexture();

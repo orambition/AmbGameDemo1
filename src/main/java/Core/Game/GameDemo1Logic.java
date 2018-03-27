@@ -11,8 +11,12 @@ import Core.Engine.items.GameItem;
 import Core.Engine.items.SkyBox;
 import Core.Engine.items.Terrain;
 import Core.Engine.loaders.obj.OBJLoader;
+import de.matthiasmann.twl.utils.PNGDecoder;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
+
+import java.nio.ByteBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -57,16 +61,54 @@ public class GameDemo1Logic implements IGameLogic {
         //创建场景
         scene = new Scene();
 
-        //创建地形
+        /*//创建地形
         float terrainScale = 1;//地形的缩放
         int terrainSize = 5;//地形快的平铺行列数
         float minY = -1f;
         float maxY = 1f;
         int textInc = 1;//地形材质的缩小倍数
         terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "/textures/map_height.png", "/textures/map_texture.png", textInc);
-        GameItem[] temp = terrain.getGameItems();
+        GameItem[] temp = terrain.getGameItems();*/
 
         /**示例代码 - 开始*/
+        float reflectance = 1f;
+        float blockScale = 0.5f;
+        float skyBoxScale = 128.0f;
+        float extension = 1.0f;
+        float startx = extension * (-skyBoxScale + blockScale);
+        float startz = extension * (skyBoxScale - blockScale);
+        float starty = -1.0f;
+        float inc = blockScale * 2;
+        float posx = startx;
+        float posz = startz;
+        float incy = 0.0f;
+        PNGDecoder decoder = new PNGDecoder(getClass().getResourceAsStream("/textures/map_height.png"));
+        int height = decoder.getHeight();
+        int width = decoder.getWidth();
+        ByteBuffer buf = ByteBuffer.allocateDirect(4 * width * height);
+        decoder.decode(buf, width * 4, PNGDecoder.Format.RGBA);
+        buf.flip();
+        int instances = height * width;
+        Mesh mesh = OBJLoader.loadMesh("/models/cube.obj",instances);
+        Texture texture = new Texture("/textures/texture1.png");
+        Material material = new Material(texture, reflectance);
+        mesh.setMaterial(material);
+        GameItem[] gameItems = new GameItem[instances];
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                GameItem gameItem = new GameItem(mesh);
+                gameItem.setScale(blockScale);
+                int rgb = HeightMapMesh.getRGB(i, j, width, buf);
+                incy = rgb/10;
+                gameItem.setPosition(posx, starty+incy, posz);
+                //int textPos = Math.random() > 0.5f ? 0 : 1;
+                //gameItem.setTextPos(textPos);
+                gameItems[i * width + j] = gameItem;
+                posx += inc;
+            }
+            posx = startx;
+            posz -= inc;
+        }
         /*//创建物体 方块
         Mesh quadMesh = OBJLoader.loadMesh("/models/cube.obj");
         Texture texture = new Texture("/textures/texture1.png");
@@ -93,9 +135,8 @@ public class GameDemo1Logic implements IGameLogic {
         gameItems[temp.length] = quadGameItem1;
         gameItems[temp.length+1] = demo4GameItem;*/
 
-        //scene.setGameItems(gameItems);
         /**示例代码 - 结束*/
-
+        scene.setGameItems(gameItems);
         //添加粒子
         Vector3f particleSpeed = new Vector3f(0,1,0);
         particleSpeed.mul(2.5f);
@@ -104,8 +145,8 @@ public class GameDemo1Logic implements IGameLogic {
         long creationPeriodMillis = 300;
         float range = 0.2f;
         Mesh partMesh = OBJLoader.loadMesh("/models/particle.obj",maxParticles);
-        Texture texture = new Texture("/textures/particle_anim.png",4,4);
-        Material partMaterial = new Material(texture,10f);
+        Texture partTexture = new Texture("/textures/particle_anim.png",4,4);
+        Material partMaterial = new Material(partTexture,10f);
         partMesh.setMaterial(partMaterial);
         Particle particle = new Particle(partMesh,particleSpeed,ttl,80);
         particle.setScale(1f);
@@ -114,16 +155,17 @@ public class GameDemo1Logic implements IGameLogic {
         particleEmitter.setPositionRndRange(range);
         particleEmitter.setSpeedRndRange(range);
         particleEmitter.setAnimRange(10);
-        this.scene.setParticleEmitters(new FlowParticleEmitter[] {particleEmitter});
+        scene.setParticleEmitters(new FlowParticleEmitter[] {particleEmitter});
 
         //渲染阴影
-        scene.setRenderShadows(false);
+        scene.setRenderShadows(true);
         //开启雾
-        scene.setFog(new Fog(true, new Vector3f(0.3f, 0.3f, 0.3f), 0.05f));
+        scene.setFog(new Fog(true, new Vector3f(0.3f, 0.35f, 0.5f), 0.011f));
 
         // 初始化天空盒
-        float skyBoxScale = 60.0f;//天空盒的缩放
-        SkyBox skyBox = new SkyBox("/models/skybox.obj","/textures/skybox1.png");
+        //float skyBoxScale = 60.0f;//天空盒的缩放
+        //SkyBox skyBox = new SkyBox("/models/skybox.obj","/textures/skybox1.png");
+        SkyBox skyBox = new SkyBox("/models/skybox.obj", new Vector4f(0.6f, 0.7f, 1.0f, 1.0f));
         skyBox.setScale(skyBoxScale);
         scene.setSkyBox(skyBox);
 
@@ -144,6 +186,8 @@ public class GameDemo1Logic implements IGameLogic {
         scene.setSceneLight(sceneLight);
         // 环境光
         sceneLight.setAmbientLight(new Vector3f(1.0f, 1.0f, 1.0f));
+        // 天空盒环境光
+        sceneLight.setSkyBoxLight(new Vector3f(1.0f, 1.0f, 1.0f));
         // 平行光
         float lightIntensity = 1f;
         //光的方向与物体不同，该方向是向量值，其它方向是轴的旋转角度
@@ -213,7 +257,7 @@ public class GameDemo1Logic implements IGameLogic {
         Vector3f prevPos = new Vector3f(camera.getPosition());
         camera.movePosition(cameraInc.x * CAMERA_POS_STEP, cameraInc.y * CAMERA_POS_STEP, cameraInc.z * CAMERA_POS_STEP);
         //检测碰撞
-        float height = terrain.getHeight(camera.getPosition())+0.1f;
+        float height = terrain != null ? terrain.getHeight(camera.getPosition())+0.1f:-Float.MAX_VALUE;
         if ( camera.getPosition().y < height )  {
             camera.setPosition(prevPos.x, height, prevPos.z);
         }else if ( camera.getPosition().y > height )  {
@@ -234,19 +278,22 @@ public class GameDemo1Logic implements IGameLogic {
             }
             //更新环境光，控制亮度
             sceneLight.getAmbientLight().set(0.3f, 0.3f, 0.4f);
+            sceneLight.getSkyBoxLight().set(0.3f, 0.3f, 0.4f);
         } else if (lightAngle <= 30 || lightAngle >= 150) {//日出日落
             sceneLight.getAmbientLight().set(0.5f, 0.5f, 0.5f);
+            sceneLight.getSkyBoxLight().set(0.5f, 0.5f, 0.5f);
             directionalLight.setIntensity(0.5f);
             directionalLight.getColor().y = Math.max(0.5f, 0.9f);
             directionalLight.getColor().z = Math.max(0.5f, 0.5f);
         } else {
             sceneLight.getAmbientLight().set(1, 1, 1);
+            sceneLight.getSkyBoxLight().set(1, 1, 1);
             directionalLight.setIntensity(1);
             directionalLight.getColor().x = 1;
             directionalLight.getColor().y = 1;
             directionalLight.getColor().z = 1;
         }
-        double angRad = Math.toRadians(lightAngle++);
+        double angRad = Math.toRadians(lightAngle);
         lightDirection.x = (float) Math.cos(angRad);
         lightDirection.y = (float) Math.sin(angRad);
         lightDirection.z = 0;

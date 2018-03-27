@@ -25,8 +25,7 @@ public class Terrain {
         int height = decoder.getHeight();//高度图的宽高
         int width = decoder.getWidth();
         //将图片放入缓存
-        ByteBuffer buf = ByteBuffer.allocateDirect(
-                4 * decoder.getWidth() * decoder.getHeight());
+        ByteBuffer buf = ByteBuffer.allocateDirect(4 * width * height);
         decoder.decode(buf, decoder.getWidth() * 4, PNGDecoder.Format.RGBA);
         buf.flip();
 

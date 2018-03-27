@@ -98,7 +98,6 @@ public class ShaderProgram {
         createUniform(uniformName + ".density");
     }
 
-
     //设置值为矩阵的Uniform
     public void setUniform(String uniformName, Matrix4f value) {
         // Dump the matrix into a float buffer

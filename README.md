@@ -10,6 +10,8 @@ https://github.com/lwjglgamedev/lwjglbook
     -修改场景着色器和粒子着色器，以支持分组的纹理坐标
 增加FPS显示
     -修改窗口、引擎、Main函数以支持FPS显示
+    -增加天空盒纯色和环境光属性
+    -修改了GameDemo1Logic，以高度图生成了组对象
     page283 - over
     cp21-p2 - over
     

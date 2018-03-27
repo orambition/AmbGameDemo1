@@ -8,7 +8,8 @@ import Core.Engine.graph.lights.SpotLight;
 import org.joml.Vector3f;
 
 public class SceneLight {
-    private Vector3f ambientLight;//环境光
+    private Vector3f ambientLight;//环境光颜色RGB
+    private Vector3f skyBoxLight;//天空盒环境光颜色
     private PointLight[] pointLightList;//点光源
     private SpotLight[] spotLightList;//聚光灯
     private DirectionalLight directionalLight;//平行光
@@ -36,5 +37,12 @@ public class SceneLight {
     }
     public void setDirectionalLight(DirectionalLight directionalLight) {
         this.directionalLight = directionalLight;
+    }
+
+    public Vector3f getSkyBoxLight() {
+        return skyBoxLight;
+    }
+    public void setSkyBoxLight(Vector3f skyBoxLight) {
+        this.skyBoxLight = skyBoxLight;
     }
 }

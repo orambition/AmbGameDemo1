@@ -173,4 +173,15 @@ public class HeightMapMesh {
         }
         return result;
     }
+    //获取buf中坐标（x,z）出的rgba值
+    public static int getRGB(int x, int z, int width, ByteBuffer buffer) {
+        byte r = buffer.get(x * 4 + 0 + z * 4 * width);
+        byte g = buffer.get(x * 4 + 1 + z * 4 * width);
+        byte b = buffer.get(x * 4 + 2 + z * 4 * width);
+        byte a = buffer.get(x * 4 + 3 + z * 4 * width);
+        /*int argb = ((0xFF & a) << 24) | ((0xFF & r) << 16)
+                | ((0xFF & g) << 8) | (0xFF & b);*/
+        int argb = r+g+b+a;
+        return argb;
+    }
 }

@@ -281,7 +281,7 @@ public class Renderer {
         Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
         for (Mesh mesh : mapMeshes.keySet()) {
             if (viewMatrix != null) {//摄像机渲染时增加材质和阴影
-                shader.setUniform("material", mesh.getMaterial());
+                sceneShaderProgram.setUniform("material", mesh.getMaterial());
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMapTexture().getId());
             }
@@ -308,8 +308,7 @@ public class Renderer {
     }
     //实例化（分组）绘制函数
     private void renderInstancedMeshes(Scene scene, ShaderProgram shader, Matrix4f viewMatrix, Matrix4f lightViewMatrix) {
-
-        sceneShaderProgram.setUniform("isInstanced", 1);
+        shader.setUniform("isInstanced", 1);
         // Render each mesh with the associated game Items
         Map<InstancedMesh, List<GameItem>> mapMeshes = scene.getGameInstancedMeshes();
         for (InstancedMesh mesh : mapMeshes.keySet()) {
@@ -319,7 +318,7 @@ public class Renderer {
                 sceneShaderProgram.setUniform("numRows", text.getNumRows());
             }
             if (viewMatrix != null) {//摄像机渲染时增加材质和阴影
-                shader.setUniform("material", mesh.getMaterial());
+                sceneShaderProgram.setUniform("material", mesh.getMaterial());
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMapTexture().getId());
             }
@@ -438,7 +437,7 @@ public class Renderer {
             viewMatrix.m32(0);
             Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(skyBox, viewMatrix);
             skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
-            skyBoxShaderProgram.setUniform("ambientLight", scene.getSceneLight().getAmbientLight());
+            skyBoxShaderProgram.setUniform("ambientLight", scene.getSceneLight().getSkyBoxLight());
             Mesh mesh = skyBox.getMesh();
             skyBoxShaderProgram.setUniform("colour", mesh.getMaterial().getAmbientColour());
             skyBoxShaderProgram.setUniform("hasTexture", mesh.getMaterial().isTextured() ? 1 : 0);
