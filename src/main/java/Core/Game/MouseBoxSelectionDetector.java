@@ -21,7 +21,7 @@ public class MouseBoxSelectionDetector extends CameraBoxSelectionDetector {
         mouseDir = new Vector3f();
         tmpVec = new Vector4f();
     }
-    public void selectGameItem(GameItem[] gameItems, Window window, Vector2d mousePos, Camera camera) {
+    public boolean  selectGameItem(GameItem[] gameItems, Window window, Vector2d mousePos, Camera camera) {
         int wdwWitdh = window.getWindowWidth();
         int wdwHeight = window.getWindowHeight();
         //根据鼠标位置,获取点击处的空间坐标，鼠标原点在屏幕中央，所以*2
@@ -39,6 +39,6 @@ public class MouseBoxSelectionDetector extends CameraBoxSelectionDetector {
         invViewMatrix.invert();
         tmpVec.mul(invViewMatrix);
         mouseDir.set(tmpVec.x, tmpVec.y, tmpVec.z);
-        selectGameItem(gameItems, camera.getPosition(), mouseDir);
+        return selectGameItem(gameItems, camera.getPosition(), mouseDir);
     }
 }

@@ -111,6 +111,8 @@ public class Window {
         glClearColor(0f, 0f, 0f, 0.0f);
         //启用深度测试？让像素点按照深度绘制，而不是随机顺序绘制
         glEnable(GL_DEPTH_TEST);
+        //启用模板测试，控制哪些像素该被绘制，最后一个测试？
+        glEnable(GL_STENCIL_TEST);
         if (opts.showTriangles) {
             //以多边形模式进行显示，这将显示模型的三角形框架;
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -122,6 +124,10 @@ public class Window {
             //启用 面剔除，并设置back为删除的规则，不渲染看不到的面，以面的朝向确定是否可见，确定面的3个点是逆时针排列的则是正面。
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
+        }
+        if (opts.antialiasing) {
+            //抗锯齿
+            glfwWindowHint(GLFW_SAMPLES, 4);
         }
     }
     public long getWindowHandle() {
@@ -161,6 +167,16 @@ public class Window {
         float aspectRatio = (float)windowWidth / (float)windowHeight;
         return projectionMatrix.setPerspective(FOV, aspectRatio, Z_NEAR, Z_FAR);
     }
+    //恢复窗口状态，首次创建是由于NanoGV在绘制HUD时会改变OpenGl的状态
+    public void restoreState() {
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_STENCIL_TEST);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        if (opts.cullFace) {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+        }
+    }
     //重要函数，在game主循环的render中调用，用于绘制画面
     public void update(){
         glfwSwapBuffers(windowHandle);
@@ -182,9 +198,10 @@ public class Window {
 
     //窗口设置内部类
     public static class WindowOptions {
-        public boolean cullFace;
-        public boolean showTriangles;
-        public boolean showFps;
-        public boolean compatibleProfile;
+        public boolean cullFace;//裁剪看不见的面
+        public boolean showTriangles;//显示网格
+        public boolean showFps;//显示FPS
+        public boolean compatibleProfile;//兼容渲染
+        public boolean antialiasing;//抗锯齿
     }
 }

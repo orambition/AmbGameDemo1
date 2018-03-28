@@ -53,7 +53,7 @@ public class Renderer {
         setupSkyBoxShader();
         setupSceneShader();
         setupParticlesShader();
-        setupHudShader();
+        //setupHudShader();已独立渲染
     }
     //创建深度图着色器
     private void setupDepthShader() throws Exception {
@@ -132,7 +132,7 @@ public class Renderer {
         skyBoxShaderProgram.createUniform("hasTexture");
     }
     //创建hud着色器
-    private void setupHudShader() throws Exception {
+    /*private void setupHudShader() throws Exception {
         hudShaderProgram = new ShaderProgram();
         hudShaderProgram.createVertexShader(Utils.loadResource("/shaders/hud_vertex.vs"));
         hudShaderProgram.createFragmentShader(Utils.loadResource("/shaders/hud_fragment.fs"));
@@ -141,15 +141,15 @@ public class Renderer {
         hudShaderProgram.createUniform("projModelMatrix");
         hudShaderProgram.createUniform("colour");
         hudShaderProgram.createUniform("hasTexture");
-    }
+    }*/
 
     //清屏函数
     public void clear(){
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);//清屏
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);//清屏
     }
 
     //渲染函数
-    public void render(Window window, Camera camera, Scene scene, IHud hud) {
+    public void render(Window window, Camera camera, Scene scene) {
         clear();
         //渲染深度图，在glViewport（）之前是因为，渲染深度图需要改变窗口大小为深度图纹理大小
         renderDepthMap(window, camera, scene);
@@ -164,7 +164,7 @@ public class Renderer {
         renderScene(window, camera, scene);
         renderSkyBox(window,camera,scene);//注意顺序
         renderParticles(window, camera, scene);
-        renderHud(window, hud);
+        //renderHud(window, hud);
         //渲染准星
         renderCrossHair(window);
     }
@@ -431,7 +431,7 @@ public class Renderer {
         }
     }
     //绘制hud的函数，填充hud相关uniform
-    private void renderHud(Window window, IHud hud) {
+    /*private void renderHud(Window window, IHud hud) {
         if (hud != null) {
             hudShaderProgram.bind();
             //正交矩阵
@@ -451,7 +451,7 @@ public class Renderer {
             }
             hudShaderProgram.unbind();
         }
-    }
+    }*/
     //渲染准星
     private void renderCrossHair(Window window) {
         if (window.getWindowOptions().compatibleProfile) {

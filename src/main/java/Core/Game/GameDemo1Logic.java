@@ -44,17 +44,18 @@ public class GameDemo1Logic implements IGameLogic {
     private Terrain terrain;//地形
 
     private FlowParticleEmitter particleEmitter;//粒子发生器
-
     //private CameraBoxSelectionDetector selectDetector;//选中检测
     private MouseBoxSelectionDetector selectDetector;//选中检测
+
     private float lightAngle;//平行光角度、方向
     private final Vector3f cameraInc;//视野移动变量
     private final Vector3f cameraros;//
-
+    private boolean leftButtonPressed;
     private GameItem[] gameItems;
 
     public GameDemo1Logic(){
         renderer = new Renderer();
+        hud = new Hud();
         soundMgr = new SoundManager();
         camera = new Camera();
 
@@ -65,6 +66,8 @@ public class GameDemo1Logic implements IGameLogic {
 
     @Override
     public void init(Window window) throws Exception {
+        //初始化HUD，场景渲染使用hud，所以先渲染
+        hud.init(window);
         //初始化渲染
         renderer.init(window);
         //初始化声音
@@ -73,6 +76,7 @@ public class GameDemo1Logic implements IGameLogic {
         scene = new Scene();
         //selectDetector = new CameraBoxSelectionDetector();
         selectDetector = new MouseBoxSelectionDetector();
+        leftButtonPressed = false;
         /*//创建地形
         float terrainScale = 1;//地形的缩放
         int terrainSize = 5;//地形快的平铺行列数
@@ -185,8 +189,7 @@ public class GameDemo1Logic implements IGameLogic {
         setupLights();
 
         //创建hud
-        hud = new Hud("DEMO");
-
+        //hud = new Hud("DEMO");
         //camera.setPosition(0,10,0);
         //设置相机的位置
         camera.getPosition().x = 0f;
@@ -298,7 +301,7 @@ public class GameDemo1Logic implements IGameLogic {
             Vector2f rotVec = mouseInput.getDisplVec();
             camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY, cameraros.z);
             //hud更新，罗盘的旋转
-            hud.rotateCompass(camera.getRotation().y);
+            //hud.rotateCompass(camera.getRotation().y);
         }
         // 更改相机的位置
         //保存现在的位置，然后移动，如果碰撞了就恢复现在的位置。
@@ -317,9 +320,11 @@ public class GameDemo1Logic implements IGameLogic {
         soundMgr.updateListenerPosition(camera);
         // 更新选中目标
         //this.selectDetector.selectGameItem(gameItems,camera);
-        if (mouseInput.isRightButtonPressed()) {
-            this.selectDetector.selectGameItem(gameItems, window,mouseInput.getCurrentPos(), camera);
+        boolean aux = mouseInput.isLeftButtonPressed();
+        if (aux && !this.leftButtonPressed && this.selectDetector.selectGameItem(gameItems, window, mouseInput.getCurrentPos(), camera)) {
+            this.hud.incCounter();//点击hud，计数
         }
+        this.leftButtonPressed = aux;
         /*demo4GameItem.getPosition().x=demoItemX;
         demo4GameItem.getPosition().z=demoItemZ;*/
         //更新场景灯光
@@ -362,10 +367,11 @@ public class GameDemo1Logic implements IGameLogic {
     }
     @Override
     public void render(Window window) {
-        if (hud != null) {
+        /*if (hud != null) {
             hud.updateSize(window);
-        }
-        renderer.render(window,camera,scene,hud);
+        }*/
+        renderer.render(window,camera,scene);
+        hud.render(window);
     }
     @Override
     public void cleanUp() {

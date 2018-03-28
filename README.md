@@ -3,6 +3,17 @@ based on lwjgl3 game demo
 教程地址：
 https://github.com/lwjglgamedev/lwjglbook
 
+使用NanoVG完善HUD
+    -在window类启动模板测试，Renderer类clear做适应性修改
+    -建立新的HUD类，其初始化和渲染在Logic主循环中完成,HUD绘制独立与场景
+    -修改Renderer类的setup和render方法剔除HUD渲染
+    -window类添加状态属性恢复方法
+    -修改物体选择检测类
+    page308 - over
+    cp24 - over
+    
+    2018-03-29
+
 添加物体选择功能
     -增加摄像机选择检测和鼠标选择检测类，并在主循环中调用，用于检测选择物体
     -为GameItem类增加被选中属性
