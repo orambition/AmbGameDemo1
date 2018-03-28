@@ -2,7 +2,6 @@ package Core.Game;
 
 import Core.Engine.*;
 import Core.Engine.graph.*;
-import Core.Engine.graph.anim.AnimGameItem;
 import Core.Engine.graph.lights.DirectionalLight;
 import Core.Engine.graph.particles.FlowParticleEmitter;
 import Core.Engine.graph.particles.Particle;
@@ -46,22 +45,19 @@ public class GameDemo1Logic implements IGameLogic {
 
     private FlowParticleEmitter particleEmitter;//粒子发生器
 
-
+    //private CameraBoxSelectionDetector selectDetector;//选中检测
+    private MouseBoxSelectionDetector selectDetector;//选中检测
     private float lightAngle;//平行光角度、方向
     private final Vector3f cameraInc;//视野移动变量
     private final Vector3f cameraros;//
 
-    private AnimGameItem demo4GameItem;
-    private GameItem quadGameItem1;
-
-    private float demoItemX = 0f;//视野移动变量
-    private float demoItemY = 1f;
-    private float demoItemZ = 0;
+    private GameItem[] gameItems;
 
     public GameDemo1Logic(){
         renderer = new Renderer();
         soundMgr = new SoundManager();
         camera = new Camera();
+
         cameraInc = new Vector3f(0, 0, 0);
         cameraros = new Vector3f(0,0,0);
         lightAngle = 90;
@@ -75,7 +71,8 @@ public class GameDemo1Logic implements IGameLogic {
         soundMgr.init();
         //创建场景
         scene = new Scene();
-
+        //selectDetector = new CameraBoxSelectionDetector();
+        selectDetector = new MouseBoxSelectionDetector();
         /*//创建地形
         float terrainScale = 1;//地形的缩放
         int terrainSize = 5;//地形快的平铺行列数
@@ -88,7 +85,7 @@ public class GameDemo1Logic implements IGameLogic {
         /**示例代码 - 开始*/
         float reflectance = 1f;
         float blockScale = 0.5f;
-        float skyBoxScale = 128.0f;
+        float skyBoxScale = 64.0f;
         float extension = 1.0f;
         float startx = extension * (-skyBoxScale + blockScale);
         float startz = extension * (skyBoxScale - blockScale);
@@ -108,7 +105,7 @@ public class GameDemo1Logic implements IGameLogic {
         Texture texture = new Texture("/textures/texture1.png");
         Material material = new Material(texture, reflectance);
         mesh.setMaterial(material);
-        GameItem[] gameItems = new GameItem[instances];
+        gameItems = new GameItem[instances];
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 GameItem gameItem = new GameItem(mesh);
@@ -156,7 +153,7 @@ public class GameDemo1Logic implements IGameLogic {
         Vector3f particleSpeed = new Vector3f(0,1,0);
         particleSpeed.mul(2.5f);
         long ttl = 2000;
-        int maxParticles = 200;
+        int maxParticles = 100;
         long creationPeriodMillis = 300;
         float range = 0.2f;
         Mesh partMesh = OBJLoader.loadMesh("/models/particle.obj",maxParticles);
@@ -277,26 +274,25 @@ public class GameDemo1Logic implements IGameLogic {
         }
 
         if (window.isKeyPressed(GLFW_KEY_UP)) {
-            demoItemZ -= 0.1;
-            soundMgr.playSoundSource(Sounds.BEEP.toString());
+            //demoItemZ -= 0.1;
         } else if (window.isKeyPressed(GLFW_KEY_DOWN)) {
-            demoItemZ += 0.1;
+            //demoItemZ += 0.1;
             soundMgr.playSoundSource(Sounds.BEEP.toString());
         }
         if (window.isKeyPressed(GLFW_KEY_LEFT)) {
-            demoItemX -= 0.1;
+            //demoItemX -= 0.1;
             soundMgr.playSoundSource(Sounds.BEEP.toString());
         } else if (window.isKeyPressed(GLFW_KEY_RIGHT)) {
-            demoItemX += 0.1;
+            //demoItemX += 0.1;
             soundMgr.playSoundSource(Sounds.BEEP.toString());
         }
         if (window.isKeyPressed(GLFW_KEY_ENTER) ) {
-            demo4GameItem.nextFrame();
+            //demo4GameItem.nextFrame();
         }
     }
 
     @Override
-    public void update(float interval,MouseInput mouseInput) {
+    public void update(float interval,MouseInput mouseInput,Window window) {
         // 更改相机的角度，根据鼠标
         if (mouseInput.isLeftButtonPressed()) {
             Vector2f rotVec = mouseInput.getDisplVec();
@@ -314,6 +310,15 @@ public class GameDemo1Logic implements IGameLogic {
             camera.setPosition(prevPos.x, height, prevPos.z);
         }else if ( camera.getPosition().y > height )  {
             //camera.movePosition(0,-2*CAMERA_POS_STEP,0);
+        }
+        // 更新视野矩阵
+        camera.updateViewMatrix();
+        // 更新听众位置
+        soundMgr.updateListenerPosition(camera);
+        // 更新选中目标
+        //this.selectDetector.selectGameItem(gameItems,camera);
+        if (mouseInput.isRightButtonPressed()) {
+            this.selectDetector.selectGameItem(gameItems, window,mouseInput.getCurrentPos(), camera);
         }
         /*demo4GameItem.getPosition().x=demoItemX;
         demo4GameItem.getPosition().z=demoItemZ;*/
@@ -354,9 +359,6 @@ public class GameDemo1Logic implements IGameLogic {
         particleEmitter.update((long)(interval*1000));
         //更新HUD
         //hud.setStatusText(String.valueOf(particleEmitter.getParticles().size()));
-
-        //更新听众位置
-        soundMgr.updateListenerPosition(camera);
     }
     @Override
     public void render(Window window) {

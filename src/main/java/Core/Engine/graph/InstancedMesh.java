@@ -23,8 +23,8 @@ public class InstancedMesh extends Mesh {
     private static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;//4元向量的字节数
     private static final int MATRIX_SIZE_FLOATS = 4 * 4;//矩阵的元素数量
     private static final int MATRIX_SIZE_BYTES = MATRIX_SIZE_FLOATS * FLOAT_SIZE_BYTES;//矩阵的字节数
-    private static final int INSTANCE_SIZE_BYTES = MATRIX_SIZE_BYTES * 2 + FLOAT_SIZE_BYTES * 2;//一个属性的字节数
-    private static final int INSTANCE_SIZE_FLOATS = MATRIX_SIZE_FLOATS * 2 + 2;//一个属性的元素数量：两个矩阵（模型*视野、模型*光视野矩阵）加一个纹理坐标
+    private static final int INSTANCE_SIZE_BYTES = MATRIX_SIZE_BYTES * 2 + FLOAT_SIZE_BYTES * 3;//一个属性的字节数
+    private static final int INSTANCE_SIZE_FLOATS = MATRIX_SIZE_FLOATS * 2 + 3;//一个属性的元素数量：两个矩阵（模型*视野、模型*光视野矩阵）加一个纹理坐标
     private final int numInstances;//对象数量
     private final int instanceDataVBO;//实例化（分组）渲染所需的VBO，包含两个矩阵和一个二维纹理坐标
     private FloatBuffer instanceDataBuffer;//
@@ -63,6 +63,11 @@ public class InstancedMesh extends Mesh {
         // 纹理坐标起始位置
         glVertexAttribPointer(start, 2, GL_FLOAT, false, INSTANCE_SIZE_BYTES, strideStart);
         glVertexAttribDivisor(start, 1);
+        start++;
+        strideStart += FLOAT_SIZE_BYTES * 2;
+        // 被选中标志位数据
+        glVertexAttribPointer(start, 1, GL_FLOAT, false, INSTANCE_SIZE_BYTES, strideStart);
+        glVertexAttribDivisor(start, 1);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
@@ -79,7 +84,7 @@ public class InstancedMesh extends Mesh {
     protected void initRender() {
         super.initRender();
         int start = 5;
-        int numElements = 4 * 2 + 1;
+        int numElements = 4 * 2 + 2;
         for (int i = 0; i < numElements; i++) {
             glEnableVertexAttribArray(start + i);//激活数组
         }
@@ -87,7 +92,7 @@ public class InstancedMesh extends Mesh {
     @Override
     protected void endRender() {
         int start = 5;
-        int numElements = 4 * 2 + 1;
+        int numElements = 4 * 2 + 2;
         for (int i = 0; i < numElements; i++) {
             glDisableVertexAttribArray(start + i);//关闭数组
         }
@@ -138,6 +143,10 @@ public class InstancedMesh extends Mesh {
                 this.instanceDataBuffer.put(buffPos, textXOffset);
                 this.instanceDataBuffer.put(buffPos + 1, textYOffset);
             }
+            // Selected data
+            int buffPos = INSTANCE_SIZE_FLOATS * i + MATRIX_SIZE_FLOATS * 2 + 2;
+            this.instanceDataBuffer.put(buffPos, gameItem.isSelected() ? 1 : 0);
+
             i++;
         }//完成以上步骤，所有对象的视野矩阵就都在一个buffer中了
         //然后，对共享同一Mesh的一组对象设置VBO数据

@@ -8,6 +8,7 @@ in vec3 mvVertexNormal;
 in vec3 mvVertexPos;
 in vec4 mlightviewVertexPos;//物体在光源视角的位置，用来判断物体是否在阴影中
 in mat4 outModelViewMatrix;//因为点的法线是跟世界坐标变化的，所以需要该矩阵
+in float outSelected;//是否被选中
 
 out vec4 fragColor;
 //衰减
@@ -192,5 +193,8 @@ void main(){
     //fragColor = ambientC * vec4(ambientLight, 1) + diffuseSpecularComp;
     if ( fog.activeFog == 1 ){
         fragColor = calcFog(mvVertexPos, fragColor, fog, ambientLight, directionalLight);
+    }
+    if ( outSelected > 0 ) {//被选中则高亮
+        fragColor = vec4(fragColor.x, fragColor.y, 1, 1);
     }
 }

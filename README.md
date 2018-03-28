@@ -3,6 +3,21 @@ based on lwjgl3 game demo
 教程地址：
 https://github.com/lwjglgamedev/lwjglbook
 
+添加物体选择功能
+    -增加摄像机选择检测和鼠标选择检测类，并在主循环中调用，用于检测选择物体
+    -为GameItem类增加被选中属性
+    -修改场景的顶点着色器和片段着色器，以支持选择高亮
+    -修改renderer类以适应着色器的改变
+    -修改InstancedMesh类中的renderListInstanced方法，以支持着色器的改变
+    -重构摄像机矩阵，将摄像机视野矩阵重构到了Camera类中
+    -重构透视矩阵，将透视矩阵转移只Window类中
+    -renderer类中添加准星绘制
+    -修改Window类的init方法，已支持兼容模式，用于绘制准星
+    page302 - over
+    cp23 - over
+    
+    2018-03-28
+
 添加声音支持
     -增加SoundBuffer用于加载声音
     -完善Utils类，增加读取ogg压缩声音文件的方法

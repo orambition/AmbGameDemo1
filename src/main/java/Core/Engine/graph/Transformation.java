@@ -13,10 +13,9 @@ import org.joml.Vector3f;
 
 public class Transformation {
     //优化，将透视矩阵和视野矩阵的get函数改为get+update函数的方式，这样多个item可以共用一个矩阵，而不是每次都新建一个
-    private final Matrix4f projectionMatrix;//透视矩阵
+    //private final Matrix4f projectionMatrix;//透视矩阵，已转移至Window类中
     private final Matrix4f orthoProjMatrix;//正交矩阵
-
-    private final Matrix4f viewMatrix;//摄像机视野矩阵
+    //private final Matrix4f viewMatrix;//摄像机视野矩阵，已转移至Camaera类中
     private final Matrix4f lightViewMatrix;//光源视野矩阵
     private final Matrix4f modelMatrix;//模型矩阵，用于缩放、旋转、移动模型本身
 
@@ -27,10 +26,9 @@ public class Transformation {
     private final Matrix4f orthoModelMatrix;//模型*正交矩阵
 
     public Transformation() {
-        projectionMatrix = new Matrix4f();
+        //projectionMatrix = new Matrix4f();
         orthoProjMatrix = new Matrix4f();
-
-        viewMatrix = new Matrix4f();
+        //viewMatrix = new Matrix4f();
         lightViewMatrix = new Matrix4f();
 
         modelMatrix = new Matrix4f();
@@ -40,16 +38,6 @@ public class Transformation {
 
         ortho2DMatrix = new Matrix4f();
         orthoModelMatrix = new Matrix4f();
-    }
-
-    //获取透视矩阵。
-    public Matrix4f getProjectionMatrix() {
-        return projectionMatrix;
-    }
-    //生成透视矩阵，将三维坐标近大远小的投影到二位屏幕上
-    public final Matrix4f updateProjectionMatrix(float fov, float width, float height, float zNear, float zFar) {
-        float aspectRatio = width / height;
-        return projectionMatrix.identity().perspective(fov, aspectRatio, zNear, zFar);
     }
 
     //获取正交矩阵。
@@ -67,23 +55,8 @@ public class Transformation {
                 .rotateY((float)Math.toRadians(rotation.y))
                 .rotateZ((float)Math.toRadians(rotation.z))
                 .translate(-position.x, -position.y, -position.z);
-        /*matrix.identity();
-        // 首先旋转，使摄像机旋转到该方向。
-        matrix.rotate((float)Math.toRadians(rotation.x), X_AXIS)
-                .rotate((float)Math.toRadians(rotation.y), Y_AXIS)
-                .rotate((float)Math.toRadians(rotation.z), Z_AXIS);
-        // 让后移动到该位置，相机移动x的距离，就是物体移动-x的距离，相机是不动的，动的是世界
-        matrix.translate(-position.x, -position.y, -position.z);
-        return matrix;*/
     }
-    // 获取摄像机视野矩阵
-    public Matrix4f getViewMatrix() {
-        return viewMatrix;
-    }
-    //生成摄像机视野矩阵,根据当前摄像机的位置和角度得到该矩阵，用于修正物体的显示坐标
-    public Matrix4f updateViewMatrix(Camera camera) {
-        return updateGenericViewMatrix(camera.getPosition(), camera.getRotation(), viewMatrix);
-    }
+
     //获取光源视野矩阵
     public Matrix4f getLightViewMatrix() {
         return lightViewMatrix;
@@ -145,7 +118,23 @@ public class Transformation {
     }
     //获取特定的2d正交矩阵，该矩阵无纵向属性，用于绘制hud等
     public final Matrix4f getOrtho2DProjectionMatrix(float left, float right, float bottom, float top) {
-        ortho2DMatrix.identity().setOrtho2D(left, right, bottom, top);
-        return ortho2DMatrix;
+        return ortho2DMatrix.identity().setOrtho2D(left, right, bottom, top);
     }
+    /*//获取透视矩阵。
+    public Matrix4f getProjectionMatrix() {
+        return projectionMatrix;
+    }
+    //生成透视矩阵，将三维坐标近大远小的投影到二位屏幕上
+    public final Matrix4f updateProjectionMatrix(float fov, float width, float height, float zNear, float zFar) {
+        float aspectRatio = width / height;
+        return projectionMatrix.identity().perspective(fov, aspectRatio, zNear, zFar);
+    }*/
+    /*  // 获取摄像机视野矩阵
+    public Matrix4f getViewMatrix() {
+        return viewMatrix;
+    }
+    //生成摄像机视野矩阵,根据当前摄像机的位置和角度得到该矩阵，用于修正物体的显示坐标
+    public Matrix4f updateViewMatrix(Camera camera) {
+        return updateGenericViewMatrix(camera.getPosition(), camera.getRotation(), viewMatrix);
+    }*/
 }

@@ -1,5 +1,6 @@
 package Core.Engine;
 
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
@@ -10,6 +11,11 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Window {
+    //视野矩阵参数
+    private static final float FOV = (float) Math.toRadians(60.0f);//视野（FOV）
+    private static final float Z_NEAR = 0.01f;//近平面距离
+    private static final float Z_FAR = 1000.f;//远平面距离
+
     private Long windowHandle;
     private String windowTitle;
     private int windowWidth;
@@ -18,6 +24,7 @@ public class Window {
     private boolean vSync;//垂直同步
     private boolean resized;//允许调整窗口大小
     private WindowOptions opts;//窗口设置内部类
+    private Matrix4f projectionMatrix;//透视矩阵，重构前在Transformation类中
 
     public Window(String windowTitle, int width, int height, boolean vSync,WindowOptions opts){
         this.windowTitle = windowTitle;
@@ -26,6 +33,7 @@ public class Window {
         this.vSync = vSync;
         this.resized = false;
         this.opts = opts;
+        projectionMatrix = new Matrix4f();
     }
     //初始化
     public void init(){
@@ -40,8 +48,12 @@ public class Window {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,2);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        if (opts.compatibleProfile) {//兼容模式
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+        } else {
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        }
 
         boolean maximized = false;
         // 如果没有宽或高，则将窗口设置为最大
@@ -96,7 +108,7 @@ public class Window {
         //重要的一步
         GL.createCapabilities();
 
-        glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
+        glClearColor(0f, 0f, 0f, 0.0f);
         //启用深度测试？让像素点按照深度绘制，而不是随机顺序绘制
         glEnable(GL_DEPTH_TEST);
         if (opts.showTriangles) {
@@ -142,6 +154,13 @@ public class Window {
     public int getWindowHeight(){
         return windowHeight;
     }
+    public Matrix4f getProjectionMatrix() {
+        return projectionMatrix;
+    }
+    public Matrix4f updateProjectionMatrix() {
+        float aspectRatio = (float)windowWidth / (float)windowHeight;
+        return projectionMatrix.setPerspective(FOV, aspectRatio, Z_NEAR, Z_FAR);
+    }
     //重要函数，在game主循环的render中调用，用于绘制画面
     public void update(){
         glfwSwapBuffers(windowHandle);
@@ -166,5 +185,6 @@ public class Window {
         public boolean cullFace;
         public boolean showTriangles;
         public boolean showFps;
+        public boolean compatibleProfile;
     }
 }

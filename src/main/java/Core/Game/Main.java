@@ -13,6 +13,7 @@ public class Main {
             Window.WindowOptions opts = new Window.WindowOptions();
             opts.cullFace =true;
             opts.showFps = true;
+            opts.compatibleProfile = true;
             GameEngine gameEngine = new GameEngine("Amb",vSync,opts,gameLogic);
             gameEngine.start();
         } catch (Exception e) {

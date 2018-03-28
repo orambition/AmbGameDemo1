@@ -15,11 +15,15 @@ public class GameItem {
     //旋转
     private final Quaternionf rotation;//方向旋转由于计算矩阵过程中是右乘的，所以顺序是zyx
     private int textPos;//纹理中块的位置，纹理分为行列之后新增的属性，纹理默认不分割，默认为0就是整个纹理，
+    //是否被选中，摄像头选择
+    private boolean selected;
+
     public GameItem() {
         position = new Vector3f(0, 0, 0);
         scale = 1;
         rotation = new Quaternionf();
         textPos = 0;
+        selected = false;
     }
     public GameItem(Mesh mesh) {
         this();
@@ -29,7 +33,12 @@ public class GameItem {
         this();
         this.meshes = meshes;
     }
-
+    public boolean isSelected() {
+        return selected;
+    }
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+    }
     public int getTextPos() {
         return textPos;
     }
