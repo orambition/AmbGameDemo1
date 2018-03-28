@@ -62,7 +62,7 @@ public class Transformation {
     }
 
     //通用的视野矩阵生成函数
-    private Matrix4f updateGenericViewMatrix(Vector3f position, Vector3f rotation, Matrix4f matrix) {
+    public static Matrix4f updateGenericViewMatrix(Vector3f position, Vector3f rotation, Matrix4f matrix) {
         return matrix.identity().rotationX((float)Math.toRadians(rotation.x))
                 .rotateY((float)Math.toRadians(rotation.y))
                 .rotateZ((float)Math.toRadians(rotation.z))

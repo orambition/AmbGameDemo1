@@ -11,10 +11,15 @@ import Core.Engine.items.GameItem;
 import Core.Engine.items.SkyBox;
 import Core.Engine.items.Terrain;
 import Core.Engine.loaders.obj.OBJLoader;
+import Core.Engine.sound.SoundBuffer;
+import Core.Engine.sound.SoundListener;
+import Core.Engine.sound.SoundManager;
+import Core.Engine.sound.SoundSource;
 import de.matthiasmann.twl.utils.PNGDecoder;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.openal.AL11;
 
 import java.nio.ByteBuffer;
 
@@ -25,29 +30,37 @@ public class GameDemo1Logic implements IGameLogic {
     private static final float MOUSE_SENSITIVITY = 0.2f;//鼠标敏感度
     private static float CAMERA_POS_STEP = 0.05f;//视角移动步长
 
-    private final Camera camera;//摄像机，视野
-
     private final Renderer renderer;//渲染器
+
+    private final SoundManager soundMgr;//声音管理
+
+    private final Camera camera;//摄像机，视野
 
     private Scene scene;//场景，包含物体和场景灯光，场景光，包含环境光、点光源数组、聚光灯光源数组、平行光源
 
     private Hud hud;
 
-    private float lightAngle;//平行光角度、方向
+    private enum Sounds { MUSIC, BEEP, FIRE };//声音的名字
 
     private Terrain terrain;//地形
 
+    private FlowParticleEmitter particleEmitter;//粒子发生器
+
+
+    private float lightAngle;//平行光角度、方向
     private final Vector3f cameraInc;//视野移动变量
     private final Vector3f cameraros;//
 
     private AnimGameItem demo4GameItem;
     private GameItem quadGameItem1;
-    private FlowParticleEmitter particleEmitter;
+
     private float demoItemX = 0f;//视野移动变量
     private float demoItemY = 1f;
     private float demoItemZ = 0;
+
     public GameDemo1Logic(){
         renderer = new Renderer();
+        soundMgr = new SoundManager();
         camera = new Camera();
         cameraInc = new Vector3f(0, 0, 0);
         cameraros = new Vector3f(0,0,0);
@@ -58,6 +71,8 @@ public class GameDemo1Logic implements IGameLogic {
     public void init(Window window) throws Exception {
         //初始化渲染
         renderer.init(window);
+        //初始化声音
+        soundMgr.init();
         //创建场景
         scene = new Scene();
 
@@ -180,7 +195,12 @@ public class GameDemo1Logic implements IGameLogic {
         camera.getPosition().x = 0f;
         camera.getPosition().y = 1f;
         camera.getPosition().z = 0f;
+
+        // 声音
+        soundMgr.setAttenuationModel(AL11.AL_EXPONENT_DISTANCE);
+        setupSounds();
     }
+    //设置灯光
     private void setupLights() {
         SceneLight sceneLight = new SceneLight();
         scene.setSceneLight(sceneLight);
@@ -196,6 +216,34 @@ public class GameDemo1Logic implements IGameLogic {
         directionalLight.setShadowPosMult(15);
         directionalLight.setOrthoCords(-10.0f, 10.0f, -10.0f, 10.0f, -1.0f, 20.0f);
         sceneLight.setDirectionalLight(directionalLight);
+    }
+    //设置声音
+    private void setupSounds() throws Exception {
+        SoundBuffer buffBack = new SoundBuffer("/sounds/background.ogg");//加载声音
+        soundMgr.addSoundBuffer(buffBack);//向管理器添加声音
+        SoundSource sourceBack = new SoundSource(true, true);//创建背景音源，循环，不衰减
+        sourceBack.setBuffer(buffBack.getBufferId());
+        soundMgr.addSoundSource(Sounds.MUSIC.toString(), sourceBack);//向管理器添加音源
+        sourceBack.play();
+
+        SoundBuffer buffBeep = new SoundBuffer("/sounds/beep.ogg");
+        soundMgr.addSoundBuffer(buffBeep);
+        SoundSource sourceBeep = new SoundSource(false, true);
+        sourceBeep.setBuffer(buffBeep.getBufferId());
+        soundMgr.addSoundSource(Sounds.BEEP.toString(), sourceBeep);
+
+        SoundBuffer buffFire = new SoundBuffer("/sounds/fire.ogg");//火焰的声音
+        soundMgr.addSoundBuffer(buffFire);
+        SoundSource sourceFire = new SoundSource(true, false);
+        Vector3f pos = particleEmitter.getBaseParticle().getPosition();//获取火焰粒子发生器的位置
+        sourceFire.setPosition(pos);
+        sourceFire.setBuffer(buffFire.getBufferId());
+        sourceFire.setGain(10f);
+        soundMgr.addSoundSource(Sounds.FIRE.toString(), sourceFire);
+        sourceFire.play();
+        //创建听众，听众位置会通过updateListenerPosition自动设置为相机位置
+        soundMgr.setListener(new SoundListener(new Vector3f(0, 0, 0)));
+
     }
     @Override
     public void input(Window window , MouseInput mouseInput) {
@@ -230,13 +278,17 @@ public class GameDemo1Logic implements IGameLogic {
 
         if (window.isKeyPressed(GLFW_KEY_UP)) {
             demoItemZ -= 0.1;
+            soundMgr.playSoundSource(Sounds.BEEP.toString());
         } else if (window.isKeyPressed(GLFW_KEY_DOWN)) {
             demoItemZ += 0.1;
+            soundMgr.playSoundSource(Sounds.BEEP.toString());
         }
         if (window.isKeyPressed(GLFW_KEY_LEFT)) {
             demoItemX -= 0.1;
+            soundMgr.playSoundSource(Sounds.BEEP.toString());
         } else if (window.isKeyPressed(GLFW_KEY_RIGHT)) {
             demoItemX += 0.1;
+            soundMgr.playSoundSource(Sounds.BEEP.toString());
         }
         if (window.isKeyPressed(GLFW_KEY_ENTER) ) {
             demo4GameItem.nextFrame();
@@ -302,6 +354,9 @@ public class GameDemo1Logic implements IGameLogic {
         particleEmitter.update((long)(interval*1000));
         //更新HUD
         //hud.setStatusText(String.valueOf(particleEmitter.getParticles().size()));
+
+        //更新听众位置
+        soundMgr.updateListenerPosition(camera);
     }
     @Override
     public void render(Window window) {
@@ -313,6 +368,7 @@ public class GameDemo1Logic implements IGameLogic {
     @Override
     public void cleanUp() {
         renderer.cleanUp();
+        soundMgr.cleanUp();
         scene.cleanUp();
         if (hud != null) {
             hud.cleanUp();

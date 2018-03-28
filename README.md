@@ -3,6 +3,17 @@ based on lwjgl3 game demo
 教程地址：
 https://github.com/lwjglgamedev/lwjglbook
 
+添加声音支持
+    -增加SoundBuffer用于加载声音
+    -完善Utils类，增加读取ogg压缩声音文件的方法
+    -增加音源类
+    -增加听众类
+    -增加声音管理类
+    page294 - over
+    cp22 - over
+    
+    2018-03-27
+
 完善实例化（分组）渲染方法
     -支持粒子的分组渲染，将纹理块的选择添加为分组渲染的属性
     -修改InstancedMesh类，将模型*视野矩阵和模型*光视野矩阵、纹理坐标整合为一个VBO
