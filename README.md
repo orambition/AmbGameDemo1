@@ -3,6 +3,16 @@ based on lwjgl3 game demo
 教程地址：
 https://github.com/lwjglgamedev/lwjglbook
 
+添加视野锥裁减优化类
+    -通过视野锥来判断哪些对象被看到，对看不见的对象进行裁减，减少Renderer中的绘制列表
+    -修改window类已适应优化
+    -为网格类增加包围球半径
+    -为GameItem类增加是否裁减属性
+    page315 - over
+    cp25 - over
+    
+    2018-03-29
+
 使用NanoVG完善HUD
     -在window类启动模板测试，Renderer类clear做适应性修改
     -建立新的HUD类，其初始化和渲染在Logic主循环中完成,HUD绘制独立与场景
@@ -12,7 +22,7 @@ https://github.com/lwjglgamedev/lwjglbook
     page308 - over
     cp24 - over
     
-    2018-03-29
+    2018-03-28
 
 添加物体选择功能
     -增加摄像机选择检测和鼠标选择检测类，并在主循环中调用，用于检测选择物体

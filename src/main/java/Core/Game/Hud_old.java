@@ -1,7 +1,6 @@
 package Core.Game;
 //hud类
 
-import Core.Engine.IHud;
 import Core.Engine.Window;
 import Core.Engine.graph.FontTexture;
 import Core.Engine.graph.Material;
@@ -14,7 +13,7 @@ import org.joml.Vector4f;
 
 import java.awt.*;
 
-public class Hud_old implements IHud{
+public class Hud_old{
 
     private static final Font FONT = new Font("Arial", Font.PLAIN, 20);
     private static final String CHARSET = "ISO-8859-1";
@@ -49,7 +48,6 @@ public class Hud_old implements IHud{
     public void rotateCompass(float angle) {
         this.compassItem.setRotation(new Quaternionf(0, 0, 180 + angle,0));
     }
-    @Override
     public GameItem[] getGameItems() {
         return gameItems;
     }

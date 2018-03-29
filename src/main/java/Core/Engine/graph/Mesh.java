@@ -27,9 +27,7 @@ public class Mesh {
      * 一个数组是一个对象，可以包含多个vbo
      * 每个vbo相当于一个属性
      * 如坐标、纹理、颜色、等*/
-
     protected final int vaoId;
-
     /*Vertex Buffer Object
      * 可以包含坐标、纹理、颜色、等信息
      * vbo是GPU内存中的存储单元，将要绘制的数据存入vbo opengl才可见*/
@@ -40,6 +38,9 @@ public class Mesh {
     private Material material;//材质
 
     public static final int MAX_WEIGHTS = 4;//每个顶点可以关联的最多权重数量，
+
+    private float boundingRadius;//包围球半径，用于计算其是否在视野锥内
+
     public Mesh(float[] positions, float[] textCoords, float[] normals, int[] indices) {
         this(positions, textCoords, normals, indices, createEmptyIntArray(MAX_WEIGHTS * positions.length / 3, 0), createEmptyFloatArray(MAX_WEIGHTS * positions.length / 3, 0));
     }
@@ -162,6 +163,13 @@ public class Mesh {
     public int getVertexCount() {
         return vertexCount;
     }
+    public float getBoundingRadius() {
+        return boundingRadius;
+    }
+    public void setBoundingRadius(float boundingRadius) {
+        this.boundingRadius = boundingRadius;
+    }
+
     protected void initRender() {
         Texture texture = material.getTexture();
         if (texture != null){

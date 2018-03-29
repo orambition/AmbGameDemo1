@@ -203,5 +203,6 @@ public class Window {
         public boolean showFps;//显示FPS
         public boolean compatibleProfile;//兼容渲染
         public boolean antialiasing;//抗锯齿
+        public boolean frustumCulling;//视野锥裁减
     }
 }

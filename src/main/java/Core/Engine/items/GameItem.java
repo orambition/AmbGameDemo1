@@ -17,6 +17,10 @@ public class GameItem {
     private int textPos;//纹理中块的位置，纹理分为行列之后新增的属性，纹理默认不分割，默认为0就是整个纹理，
     //是否被选中，摄像头选择
     private boolean selected;
+    //不启用视野锥裁减
+    private boolean disableFrustumCulling;
+    //是否在视野锥内
+    private boolean insideFrustum;
 
     public GameItem() {
         position = new Vector3f(0, 0, 0);
@@ -24,6 +28,8 @@ public class GameItem {
         rotation = new Quaternionf();
         textPos = 0;
         selected = false;
+        insideFrustum = true;
+        disableFrustumCulling = false;
     }
     public GameItem(Mesh mesh) {
         this();
@@ -33,12 +39,7 @@ public class GameItem {
         this();
         this.meshes = meshes;
     }
-    public boolean isSelected() {
-        return selected;
-    }
-    public void setSelected(boolean selected) {
-        this.selected = selected;
-    }
+
     public int getTextPos() {
         return textPos;
     }
@@ -90,5 +91,23 @@ public class GameItem {
         for(int i=0; i<numMeshes; i++) {
             this.meshes[i].cleanUp();
         }
+    }
+    public boolean isSelected() {
+        return selected;
+    }
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+    }
+    public boolean isInsideFrustum() {
+        return insideFrustum;
+    }
+    public void setInsideFrustum(boolean insideFrustum) {
+        this.insideFrustum = insideFrustum;
+    }
+    public boolean isDisableFrustumCulling() {
+        return disableFrustumCulling;
+    }
+    public void setDisableFrustumCulling(boolean disableFrustumCulling) {
+        this.disableFrustumCulling = disableFrustumCulling;
     }
 }

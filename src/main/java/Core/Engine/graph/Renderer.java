@@ -2,7 +2,10 @@ package Core.Engine.graph;
 /*渲染类
 * 用于渲染画面*/
 
-import Core.Engine.*;
+import Core.Engine.Scene;
+import Core.Engine.SceneLight;
+import Core.Engine.Utils;
+import Core.Engine.Window;
 import Core.Engine.graph.anim.AnimGameItem;
 import Core.Engine.graph.anim.AnimatedFrame;
 import Core.Engine.graph.lights.DirectionalLight;
@@ -15,6 +18,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,19 +36,24 @@ public class Renderer {
     private ShadowMap shadowMap;//深度图
     //获取投影、视角等各种矩阵的工具类
     private final Transformation transformation;
-
     //着色器程序，深度图、天空盒、场景和hud、粒子的
     private ShaderProgram depthShaderProgram;
     private ShaderProgram skyBoxShaderProgram;
     private ShaderProgram sceneShaderProgram;
-    private ShaderProgram hudShaderProgram;
     private ShaderProgram particlesShaderProgram;
+    //private ShaderProgram hudShaderProgram;
     //镜面反射率
     private float specularPower;
+    //视野锥裁减检测类
+    private final FrustumCullingFilter frustumFilter;
+    //视野锥裁减后剩余的对象
+    private final List<GameItem> filteredItems;
 
     public Renderer(){
         transformation = new Transformation();
         specularPower = 10f;
+        frustumFilter = new FrustumCullingFilter();
+        filteredItems = new ArrayList<>();
     }
     public void init(Window window) throws Exception {
         shadowMap = new ShadowMap();
@@ -142,7 +151,6 @@ public class Renderer {
         hudShaderProgram.createUniform("colour");
         hudShaderProgram.createUniform("hasTexture");
     }*/
-
     //清屏函数
     public void clear(){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);//清屏
@@ -151,11 +159,16 @@ public class Renderer {
     //渲染函数
     public void render(Window window, Camera camera, Scene scene) {
         clear();
+        //根据视野锥裁减对象
+        if (window.getWindowOptions().frustumCulling) {
+            frustumFilter.updateFrustum(window.getProjectionMatrix(), camera.getViewMatrix());
+            frustumFilter.filter(scene.getGameMeshes());
+            frustumFilter.filter(scene.getGameInstancedMeshes());
+        }
         //渲染深度图，在glViewport（）之前是因为，渲染深度图需要改变窗口大小为深度图纹理大小
         renderDepthMap(window, camera, scene);
-
+        //重新设置窗口大小
         glViewport(0, 0, window.getWindowWidth(), window.getWindowHeight());
-
         //设置共享的投影矩阵和视野矩阵
         //transformation.updateProjectionMatrix(FOV, window.getWindowWidth(), window.getWindowHeight(), Z_NEAR, Z_FAR);
         //transformation.updateViewMatrix(camera);//视野更新已放入logic的update中
@@ -263,7 +276,13 @@ public class Renderer {
                 sceneShaderProgram.setUniform("numCols", text.getNumCols());
                 sceneShaderProgram.setUniform("numRows", text.getNumRows());
             }
-            mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
+            filteredItems.clear();
+            for (GameItem gameItem : mapMeshes.get(mesh)) {
+                if (gameItem.isInsideFrustum()) {
+                    filteredItems.add(gameItem);
+                }
+            }
+            mesh.renderList(filteredItems, (GameItem gameItem) -> {
                 //设置是否被选中uniform
                 sceneShaderProgram.setUniform("selectedNonInstanced", gameItem.isSelected() ? 1.0f : 0.0f);
                 //模型矩阵
@@ -301,7 +320,13 @@ public class Renderer {
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMapTexture().getId());
             }
-            mesh.renderListInstanced(mapMeshes.get(mesh), transformation, viewMatrix, lightViewMatrix);
+            filteredItems.clear();
+            for (GameItem gameItem : mapMeshes.get(mesh)) {
+                if (gameItem.isInsideFrustum()) {
+                    filteredItems.add(gameItem);
+                }
+            }
+            mesh.renderListInstanced(filteredItems, transformation, viewMatrix, lightViewMatrix);
         }
     }
     //绘制光的函数，就是把相应的uniform填冲上相应的值
@@ -479,10 +504,8 @@ public class Renderer {
 
         if (sceneShaderProgram != null)
             sceneShaderProgram.cleanUp();
-
-        if (hudShaderProgram != null)
-            hudShaderProgram.cleanUp();
-
+        /*if (hudShaderProgram != null)
+            hudShaderProgram.cleanUp();*/
         if (shadowMap != null)
             shadowMap.cleanup();
 

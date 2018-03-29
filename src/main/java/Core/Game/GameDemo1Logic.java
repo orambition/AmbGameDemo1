@@ -106,6 +106,9 @@ public class GameDemo1Logic implements IGameLogic {
         buf.flip();
         int instances = height * width;
         Mesh mesh = OBJLoader.loadMesh("/models/cube.obj",instances);
+        //设置包围盒半径
+        mesh.setBoundingRadius(1);
+
         Texture texture = new Texture("/textures/texture1.png");
         Material material = new Material(texture, reflectance);
         mesh.setMaterial(material);
@@ -219,7 +222,7 @@ public class GameDemo1Logic implements IGameLogic {
     }
     //设置声音
     private void setupSounds() throws Exception {
-        SoundBuffer buffBack = new SoundBuffer("/sounds/background.ogg");//加载声音
+        SoundBuffer buffBack = new SoundBuffer("/sounds/231976__diboz__3am-in-a-deserted-spaceport.ogg");//加载声音
         soundMgr.addSoundBuffer(buffBack);//向管理器添加声音
         SoundSource sourceBack = new SoundSource(true, true);//创建背景音源，循环，不衰减
         sourceBack.setBuffer(buffBack.getBufferId());
@@ -355,7 +358,7 @@ public class GameDemo1Logic implements IGameLogic {
             directionalLight.getColor().y = 1;
             directionalLight.getColor().z = 1;
         }
-        double angRad = Math.toRadians(lightAngle);
+        double angRad = Math.toRadians(lightAngle+=0.1);
         lightDirection.x = (float) Math.cos(angRad);
         lightDirection.y = (float) Math.sin(angRad);
         lightDirection.z = 0;
