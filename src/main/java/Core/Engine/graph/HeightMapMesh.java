@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HeightMapMesh {
-    private static final int MAX_COLOUR = 256 * 256 * 256* 256-1;
+    private static final int MAX_COLOUR = 256*4;
     public static final float STARTX = -0.5f;//设置Mesh 的xz的大小范围在-0.5~0.5之间
     public static final float STARTZ = -0.5f;
     private final float minY;//输出高度的最小值
@@ -159,8 +159,9 @@ public class HeightMapMesh {
         byte g = buffer.get(x * 4 + 1 + z * 4 * width);
         byte b = buffer.get(x * 4 + 2 + z * 4 * width);
         byte a = buffer.get(x * 4 + 3 + z * 4 * width);
-        int argb = ((0xFF & a) << 24) | ((0xFF & r) << 16)
-                | ((0xFF & g) << 8) | (0xFF & b);
+        /*int argb = ((0xFF & a) << 24) | ((0xFF & r) << 16)
+                | ((0xFF & g) << 8) | (0xFF & b);*/
+        int argb = r+g+b+a;
         return this.minY + Math.abs(this.maxY - this.minY) * ((float) argb / (float) MAX_COLOUR);
     }
     //与上面的函数用处完全不同，获取的是某行列的高度，是生成后用于获取高度使用的

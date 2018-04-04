@@ -26,7 +26,7 @@ public class Scene {
         meshMap = new HashMap();
         instancedMeshMap = new HashMap();
         fog = Fog.NOFOG;//场景都有雾，但默认雾是不开启的，有是因为着色器需要这个参数
-        renderShadows = true;
+        renderShadows = false;
     }
     public boolean isRenderShadows() {
         return renderShadows;

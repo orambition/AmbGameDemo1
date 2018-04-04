@@ -23,8 +23,8 @@ public class InstancedMesh extends Mesh {
     private static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;//4元向量的字节数
     private static final int MATRIX_SIZE_FLOATS = 4 * 4;//矩阵的元素数量
     private static final int MATRIX_SIZE_BYTES = MATRIX_SIZE_FLOATS * FLOAT_SIZE_BYTES;//矩阵的字节数
-    private static final int INSTANCE_SIZE_BYTES = MATRIX_SIZE_BYTES * 2 + FLOAT_SIZE_BYTES * 3;//一个属性的字节数
-    private static final int INSTANCE_SIZE_FLOATS = MATRIX_SIZE_FLOATS * 2 + 3;//一个属性的元素数量：两个矩阵（模型*视野、模型*光视野矩阵）加一个纹理坐标
+    private static final int INSTANCE_SIZE_BYTES = MATRIX_SIZE_BYTES + FLOAT_SIZE_BYTES * 3;//一个属性的字节数
+    private static final int INSTANCE_SIZE_FLOATS = MATRIX_SIZE_FLOATS + 3;//一个属性的元素数量：两个矩阵（模型*视野、模型*光视野矩阵）加一个纹理坐标
     private final int numInstances;//对象数量
     private final int instanceDataVBO;//实例化（分组）渲染所需的VBO，包含两个矩阵和一个二维纹理坐标
     private FloatBuffer instanceDataBuffer;//
@@ -40,7 +40,7 @@ public class InstancedMesh extends Mesh {
         //创建vbo类型，此处是4*4矩阵两个加一个2数据的纹理坐标
         int start = 5;//从5开始是因为Mesh来中已经有4个属性了
         int strideStart = 0;
-        // 模型*摄像机视野矩阵
+        // 模型矩阵
         for (int i = 0; i < 4; i++) {
             //循环4次的原因是每个vbo属性最多只能有4个GL_FLOAT，而一个矩阵是4*4的
             //参数5：步长，这一点对于理解这一点非常重要，这就设置了连续属性之间的字节偏移量。在这种情况下，我们需要将它设置为以字节为单位的整个矩阵大小。
@@ -53,19 +53,12 @@ public class InstancedMesh extends Mesh {
             start++;
             strideStart += VECTOR4F_SIZE_BYTES;
         }
-        // 模型*灯光视野矩阵
-        for (int i = 0; i < 4; i++) {
-            glVertexAttribPointer(start, 4, GL_FLOAT, false, INSTANCE_SIZE_BYTES, strideStart);
-            glVertexAttribDivisor(start, 1);
-            start++;
-            strideStart += VECTOR4F_SIZE_BYTES;
-        }
         // 纹理坐标起始位置
         glVertexAttribPointer(start, 2, GL_FLOAT, false, INSTANCE_SIZE_BYTES, strideStart);
         glVertexAttribDivisor(start, 1);
         start++;
         strideStart += FLOAT_SIZE_BYTES * 2;
-        // 被选中标志位数据
+        // 被选中标志位数据，或者是粒子的缩放
         glVertexAttribPointer(start, 1, GL_FLOAT, false, INSTANCE_SIZE_BYTES, strideStart);
         glVertexAttribDivisor(start, 1);
 
@@ -84,7 +77,7 @@ public class InstancedMesh extends Mesh {
     protected void initRender() {
         super.initRender();
         int start = 5;
-        int numElements = 4 * 2 + 2;
+        int numElements = 4 + 2;
         for (int i = 0; i < numElements; i++) {
             glEnableVertexAttribArray(start + i);//激活数组
         }
@@ -92,16 +85,16 @@ public class InstancedMesh extends Mesh {
     @Override
     protected void endRender() {
         int start = 5;
-        int numElements = 4 * 2 + 2;
+        int numElements = 4 + 2;
         for (int i = 0; i < numElements; i++) {
             glDisableVertexAttribArray(start + i);//关闭数组
         }
         super.endRender();
     }
-    public void renderListInstanced(List<GameItem> gameItems, Transformation transformation, Matrix4f viewMatrix, Matrix4f lightViewMatrix) {
-        renderListInstanced(gameItems, false, transformation, viewMatrix, lightViewMatrix);
+    public void renderListInstanced(List<GameItem> gameItems, Transformation transformation, Matrix4f viewMatrix) {
+        renderListInstanced(gameItems, false, transformation, viewMatrix);
     }
-    public void renderListInstanced(List<GameItem> gameItems, boolean billBoard, Transformation transformation, Matrix4f viewMatrix, Matrix4f lightViewMatrix) {
+    public void renderListInstanced(List<GameItem> gameItems, boolean billBoard, Transformation transformation, Matrix4f viewMatrix) {
         initRender();
         int chunkSize = numInstances;
         int length = gameItems.size();
@@ -109,43 +102,36 @@ public class InstancedMesh extends Mesh {
             int end = Math.min(length, i + chunkSize);
             List<GameItem> subList = gameItems.subList(i, end);
             //一个Chunk绘制一次，此处是与原Mesh类中绘制函数的区别
-            renderChunkInstanced(subList, billBoard, transformation, viewMatrix, lightViewMatrix);
+            renderChunkInstanced(subList, billBoard, transformation, viewMatrix);
         }
         endRender();
     }
-    private void renderChunkInstanced(List<GameItem> gameItems, boolean billBoard, Transformation transformation, Matrix4f viewMatrix, Matrix4f lightViewMatrix) {
-
+    private void renderChunkInstanced(List<GameItem> gameItems, boolean billBoard, Transformation transformation, Matrix4f viewMatrix) {
         this.instanceDataBuffer.clear();
         int i = 0;
         Texture text = getMaterial().getTexture();
-        for (GameItem gameItem : gameItems) {//遍历共享一个Mesh的对象
+        //遍历共享一个Mesh的对象，传入模型矩阵、纹理分块、是否选中数据
+        for (GameItem gameItem : gameItems) {
             Matrix4f modelMatrix = transformation.buildModelMatrix(gameItem);//获取模型矩阵
-            if (viewMatrix != null) {//如果摄像机视野矩阵不为空
-                if (billBoard) {//粒子不随摄像机转动
-                    viewMatrix.transpose3x3(modelMatrix);
-                }
-                Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(modelMatrix, viewMatrix);//获取模型*视野矩阵
-                if (billBoard) {//恢复粒子的缩放效果
-                    modelViewMatrix.scale(gameItem.getScale());
-                }
-                modelViewMatrix.get(INSTANCE_SIZE_FLOATS * i, instanceDataBuffer);//将数据放入Buffer中的index位置
+            //如果摄像机视野矩阵不为空,且是绘制粒子
+            if (viewMatrix != null && billBoard) {
+                viewMatrix.transpose3x3(modelMatrix);//不随摄像机转动，此处这么做会导致粒子缩放效果消失，所以在粒子着色器中添加缩放属性
             }
-            if (lightViewMatrix != null) {
-                Matrix4f modelLightViewMatrix = transformation.buildModelLightViewMatrix(modelMatrix, lightViewMatrix);
-                modelLightViewMatrix.get(INSTANCE_SIZE_FLOATS * i + MATRIX_SIZE_FLOATS, this.instanceDataBuffer);
-            }
+            //将模型矩阵数据放入Buffer中的index位置
+            modelMatrix.get(INSTANCE_SIZE_FLOATS * i, instanceDataBuffer);
+
             if (text != null) {//如果纹理不为空，则进行分块渲染，texture atlas
                 int col = gameItem.getTextPos() % text.getNumCols();
                 int row = gameItem.getTextPos() / text.getNumCols();
                 float textXOffset = (float) col / text.getNumCols();
                 float textYOffset = (float) row / text.getNumRows();
-                int buffPos = INSTANCE_SIZE_FLOATS * i + MATRIX_SIZE_FLOATS * 2;
+                int buffPos = INSTANCE_SIZE_FLOATS * i + MATRIX_SIZE_FLOATS;
                 this.instanceDataBuffer.put(buffPos, textXOffset);
                 this.instanceDataBuffer.put(buffPos + 1, textYOffset);
             }
-            // Selected data
-            int buffPos = INSTANCE_SIZE_FLOATS * i + MATRIX_SIZE_FLOATS * 2 + 2;
-            this.instanceDataBuffer.put(buffPos, gameItem.isSelected() ? 1 : 0);
+            //是否被选中，或粒子缩放
+            int buffPos = INSTANCE_SIZE_FLOATS * i + MATRIX_SIZE_FLOATS + 2;
+            this.instanceDataBuffer.put(buffPos, billBoard ? gameItem.getScale() : gameItem.isSelected() ? 1 : 0);
 
             i++;
         }//完成以上步骤，所有对象的视野矩阵就都在一个buffer中了

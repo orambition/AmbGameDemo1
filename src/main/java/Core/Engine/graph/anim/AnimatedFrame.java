@@ -5,10 +5,10 @@ import org.joml.Matrix4f;
 import java.util.Arrays;
 
 public class AnimatedFrame {
-    public static final int MAX_JOINTS = 150;
+    public static final int MAX_JOINTS = 150;//与scene_vertex着色器对应
     private static final Matrix4f IDENTITY_MATRIX = new Matrix4f();
     private final Matrix4f[] localJointMatrices;//注意此对象final属性
-    private final Matrix4f[] jointMatrices;
+    private final Matrix4f[] jointMatrices;//每帧的骨骼位置矩阵
     public AnimatedFrame() {
         localJointMatrices = new Matrix4f[MAX_JOINTS];
         Arrays.fill(localJointMatrices, IDENTITY_MATRIX);

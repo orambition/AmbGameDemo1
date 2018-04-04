@@ -7,16 +7,10 @@ public class DirectionalLight {
     private Vector3f direction;//方向，eg.方向(1,0,0,0)是右向左的光，从x轴的正半轴设想负半轴
     private float intensity;//强度
 
-    private OrthoCoords orthoCords;//正交坐标，用于生产正交矩阵，以绘制该光源产生的阴影的深度图
-    private float shadowPosMult;//绘制阴影时，计算光源位置
-
     public DirectionalLight(Vector3f color, Vector3f direction, float intensity) {
         this.color = color;
         this.direction = direction;
         this.intensity = intensity;
-
-        this.orthoCords = new OrthoCoords();
-        this.shadowPosMult = 1;
     }
 
     public DirectionalLight(DirectionalLight light) {
@@ -40,31 +34,5 @@ public class DirectionalLight {
     }
     public void setIntensity(float intensity) {
         this.intensity = intensity;
-    }
-    public float getShadowPosMult() {
-        return shadowPosMult;
-    }
-    public void setShadowPosMult(float shadowPosMult) {
-        this.shadowPosMult = shadowPosMult;
-    }
-    public OrthoCoords getOrthoCoords(){
-        return orthoCords;
-    }
-    public void setOrthoCords(float left, float right, float bottom, float top, float near, float far) {
-        orthoCords.left = left;
-        orthoCords.right = right;
-        orthoCords.bottom = bottom;
-        orthoCords.top = top;
-        orthoCords.near = near;
-        orthoCords.far = far;
-    }
-    //正交坐标内部类
-    public static class OrthoCoords {
-        public float left;
-        public float right;
-        public float bottom;
-        public float top;
-        public float near;
-        public float far;
     }
 }

@@ -1,12 +1,13 @@
 #version 330
 
-const int MAX_POINT_LIGHTS = 5;
+const int MAX_POINT_LIGHTS = 5;//光源最大数量，与Renderer对应
 const int MAX_SPOT_LIGHTS = 5;
+const int NUM_CASCADES = 3;
 
 in vec2 outTexCoord;
 in vec3 mvVertexNormal;
 in vec3 mvVertexPos;
-in vec4 mlightviewVertexPos;//物体在光源视角的位置，用来判断物体是否在阴影中
+in vec4 mlightviewVertexPos[NUM_CASCADES];//物体在光源视角的位置，用来判断物体是否在阴影中（分层）
 in mat4 outModelViewMatrix;//因为点的法线是跟世界坐标变化的，所以需要该矩阵
 in float outSelected;//是否被选中
 
@@ -55,6 +56,10 @@ struct Fog{
 
 uniform sampler2D texture_sampler;//纹理
 uniform sampler2D normalMap;//法线纹理
+uniform sampler2D shadowMap_0;//深度图纹理，由ShadowRender渲染得出
+uniform sampler2D shadowMap_1;//数量与层次对应
+uniform sampler2D shadowMap_2;//通过该值对比点是否在阴影内
+
 uniform vec3 ambientLight;//环境光，以相同的方式影响每一个面
 uniform float specularPower;//高光（镜面反射率）
 uniform Material material;//材质
@@ -65,12 +70,12 @@ uniform DirectionalLight directionalLight;//平行光源
 
 uniform Fog fog;//雾
 
-uniform sampler2D shadowMap;//阴影图，由深度着色器绘制得出
 uniform int renderShadow;//是否绘制阴影
-//全局变量
-vec4 ambientC;
-vec4 diffuseC;
-vec4 speculrC;
+uniform float cascadeFarPlanes[NUM_CASCADES];//阴影层的远平面矩阵，用于判断点在哪个阴影层内
+
+vec4 ambientC;//环境光
+vec4 diffuseC;//漫反射
+vec4 speculrC;//镜面反射
 
 //根据材质的特性设置颜色
 void setupColours(Material material, vec2 textCoord){
@@ -149,20 +154,35 @@ vec3 calcNormal(Material material, vec3 normal, vec2 text_coord, mat4 modelViewM
     return newNormal;
 }
 //计算传入的位置是否在阴影中，是返回1否0
-float calcShadow(vec4 position){
+float calcShadow(vec4 position, int idx){
     if ( renderShadow == 0 ){
         return 1.0;
     }
     vec3 projCoords = position.xyz;
     // 从屏幕坐标转换到纹理坐标
     projCoords = projCoords * 0.5 + 0.5;
-    float bias = 0.05;
+    float bias = 0.005;
     float shadowFactor = 0.0;
-    vec2 inc = 1.0 / textureSize(shadowMap, 0);
+    vec2 inc;
+    if (idx == 0){//根据深度图层次id，获取深度的大小，计算单位
+        inc = 1.0 / textureSize(shadowMap_0, 0);
+    }else if (idx == 1){
+        inc = 1.0 / textureSize(shadowMap_1, 0);
+    }else{
+        inc = 1.0 / textureSize(shadowMap_2, 0);
+    }
     //获取改点周围的9个阴影值
     for(int row = -1; row <= 1; ++row){
         for(int col = -1; col <= 1; ++col){
-            float textDepth = texture(shadowMap, projCoords.xy + vec2(row, col) * inc).r;
+            float textDepth;
+            if (idx == 0){
+                textDepth = texture(shadowMap_0, projCoords.xy + vec2(row, col) * inc).r;
+            }else if (idx == 1){
+                textDepth = texture(shadowMap_1, projCoords.xy + vec2(row, col) * inc).r;
+            }else{
+                textDepth = texture(shadowMap_2, projCoords.xy + vec2(row, col) * inc).r;
+            }
+            //比较点和深度图的深度值
             shadowFactor += projCoords.z - bias > textDepth ? 1.0 : 0.0;
         }
     }
@@ -188,7 +208,15 @@ void main(){
             diffuseSpecularComp += calcSpotLight(spotLights[i], mvVertexPos, currNomal);
         }
     }
-    float shadow = calcShadow(mlightviewVertexPos);
+    int idx;//通过对比深度值计算点在哪个阴影层
+    for (int i=0; i<NUM_CASCADES; i++){
+        if ( abs(mvVertexPos.z) < cascadeFarPlanes[i] ){
+            idx = i;
+            break;
+        }
+    }
+    float shadow = calcShadow(mlightviewVertexPos[idx], idx);
+
     fragColor = clamp(ambientC * vec4(ambientLight, 1) + diffuseSpecularComp * shadow, 0, 1);
     //fragColor = ambientC * vec4(ambientLight, 1) + diffuseSpecularComp;
     if ( fog.activeFog == 1 ){

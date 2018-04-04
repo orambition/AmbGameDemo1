@@ -3,6 +3,22 @@ based on lwjgl3 game demo
 教程地址：
 https://github.com/lwjglgamedev/lwjglbook
 
+完善阴影绘制，采用分层阴影绘制CMS
+    -将阴影绘制过程从Render类中提出，建立新的阴影渲染类、阴影缓存（纹理）类、阴影分层类
+    -删除shadowMap类
+    -添加ArrTexture数组纹理，以支持分层阴影
+    -重构Render类中的render方法
+    -重构InstancedMesh类的render方法，将模型*视野和模型*光视野矩阵删除，只保留模型矩阵
+    -修改Scene和深度图着色器，取消模型*视野矩阵,由模型和视野矩阵替代
+    -完善ShaderProgram类，以支持数组的Uniform定义和赋值
+    -修改粒子着色器和深度图着色器
+    -修改的InstancedMesh类的render方法，将是否被选中，与粒子缩放共用
+    -修改平行光类，删除正交矩阵和距离，该计算工作有shadow类动态完成
+    page315 - over
+    cp26 - over 
+    
+    2018-04-02
+
 添加视野锥裁减优化类
     -通过视野锥来判断哪些对象被看到，对看不见的对象进行裁减，减少Renderer中的绘制列表
     -修改window类已适应优化

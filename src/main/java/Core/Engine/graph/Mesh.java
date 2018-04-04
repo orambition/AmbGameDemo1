@@ -37,7 +37,7 @@ public class Mesh {
 
     private Material material;//材质
 
-    public static final int MAX_WEIGHTS = 4;//每个顶点可以关联的最多权重数量，
+    public static final int MAX_WEIGHTS = 4;//每个顶点可以关联的最多权重数量，与scene_vertex着色器对应
 
     private float boundingRadius;//包围球半径，用于计算其是否在视野锥内
 
@@ -216,10 +216,12 @@ public class Mesh {
     public void renderList(List<GameItem> gameItems, Consumer<GameItem> consumer) {
         initRender();
         for (GameItem gameItem : gameItems) {
-            // java新特性，函数式编程，consumer为一个处理函数，accept为执行该处理函数
-            consumer.accept(gameItem);
-            // Render this game item
-            glDrawElements(GL_TRIANGLES, getVertexCount(), GL_UNSIGNED_INT, 0);
+            if (gameItem.isInsideFrustum()) {
+                // java新特性，函数式编程，consumer为一个处理函数，accept为执行该处理函数
+                consumer.accept(gameItem);
+                // Render this game item
+                glDrawElements(GL_TRIANGLES, getVertexCount(), GL_UNSIGNED_INT, 0);
+            }
         }
         endRender();
     }

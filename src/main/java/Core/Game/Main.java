@@ -14,7 +14,7 @@ public class Main {
             opts.showFps = true;
             opts.compatibleProfile = true;
             opts.antialiasing = true;
-            opts.frustumCulling = true;
+            opts.frustumCulling = false;
             GameEngine gameEngine = new GameEngine("Amb",vSync,opts,gameLogic);
             gameEngine.start();
         } catch (Exception e) {

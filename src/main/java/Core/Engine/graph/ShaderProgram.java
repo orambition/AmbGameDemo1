@@ -49,6 +49,12 @@ public class ShaderProgram {
             throw new Exception("Could not find uniform:" + uniformName);
         uniforms.put(uniformName, uniformLocation);
     }
+    //创建多个Uniform
+    public void createUniform(String uniformName, int size) throws Exception {
+        for (int i=0; i<size; i++) {
+            createUniform(uniformName + "[" + i + "]");
+        }
+    }
     //创建点光源uniform数组
     public void createPointLightListUniform(String uniformName, int size) throws Exception {
         for (int i = 0; i < size; i++) {
@@ -107,6 +113,10 @@ public class ShaderProgram {
             glUniformMatrix4fv(uniforms.get(uniformName), false, fb);
         }
     }
+    //设置值为矩阵的数组Uniform
+    public void setUniform(String uniformName, Matrix4f value, int index) {
+        setUniform(uniformName + "[" + index  + "]", value);
+    }
     //设置值为矩阵数组的Uniform
     public void setUniform(String uniformName, Matrix4f[] matrices) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -125,6 +135,10 @@ public class ShaderProgram {
     //设置值为浮点数的Uniform
     public void setUniform(String uniformName, float value) {
         glUniform1f(uniforms.get(uniformName), value);
+    }
+    //设置值为浮点数的数组Uniform
+    public void setUniform(String uniformName, float value, int index) {
+        setUniform(uniformName + "[" + index  + "]", value);
     }
     //设置值为3元向量的Uniform
     public void setUniform(String uniformName, Vector3f value) {

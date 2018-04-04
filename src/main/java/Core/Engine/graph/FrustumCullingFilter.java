@@ -19,12 +19,12 @@ public class FrustumCullingFilter {
         prjViewMatrix = new Matrix4f();
         frustumInt = new FrustumIntersection();
     }
-    //计算锥面
+    //计算锥面，此处的运算很过程很重要
     public void updateFrustum(Matrix4f projMatrix, Matrix4f viewMatrix) {
         // 计算透视*视野矩阵
         prjViewMatrix.set(projMatrix);
         prjViewMatrix.mul(viewMatrix);
-        // Update frustum intersection class
+        // 通过变换矩阵将视野锥的6面的位置计算出来
         frustumInt.set(prjViewMatrix);
     }
     //检测物体是否在视野锥内，通过物体包围球计算，包围球半径通过网格得出
@@ -48,6 +48,7 @@ public class FrustumCullingFilter {
     }
     //检测球体是否在视野锥内，球心和半径
     public boolean insideFrustum(float x0, float y0, float z0, float boundingRadius) {
+        //关键库函数，可判断球体在不在椎体内
         return frustumInt.testSphere(x0, y0, z0, boundingRadius);
     }
 }

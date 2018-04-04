@@ -12,9 +12,9 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Window {
     //视野矩阵参数
-    private static final float FOV = (float) Math.toRadians(60.0f);//视野（FOV）
-    private static final float Z_NEAR = 0.01f;//近平面距离
-    private static final float Z_FAR = 1000.f;//远平面距离
+    public static final float FOV = (float) Math.toRadians(60.0f);//视野（FOV）
+    public static final float Z_NEAR = 0.01f;//近平面距离
+    public static final float Z_FAR = 1000.f;//远平面距离
 
     private Long windowHandle;
     private String windowTitle;

@@ -10,7 +10,6 @@ public class AnimVertex {
     public float[] weights;//权重数组
     public int[] jointIndices;//关节数组
     public AnimVertex() {
-        super();
         normal = new Vector3f(0, 0, 0);
     }
 }
