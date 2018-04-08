@@ -2,9 +2,11 @@ package Core.Engine.graph.shadow;
 //阴影层类，分层阴影渲染中的每层
 //对于每个子层，首先，通过视野锥8个顶点计算视野锥的中心，然后通过该位置和光的方向计算光的位置
 import Core.Engine.Window;
+import Core.Engine.Utils;
 import Core.Engine.graph.Transformation;
 import Core.Engine.graph.lights.DirectionalLight;
 import org.joml.Matrix4f;
+import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -80,10 +82,12 @@ public class ShadowCascade {
     }
     //根据光的位置和方向计算光视野矩阵
     private void updateLightViewMatrix(Vector3f lightDirection, Vector3f lightPosition) {
-        float lightAngleX = 90;
+        float lightAngleX = -90;
         float lightAngleY = 0;
-        float lightAngleZ = 0;
-        Transformation.updateGenericViewMatrix(lightPosition, new Vector3f(lightAngleX, lightAngleY, lightAngleZ), lightViewMatrix);
+        float lightAngleZ = (float) Math.toDegrees(Math.acos(lightDirection.x));
+        Vector3f temp = new Vector3f(lightAngleX,lightAngleY,lightAngleZ);
+        Vector3f eular = new Vector3f(Utils.vectorToEuler(new Vector3f(0,0,-1),lightDirection));
+        Transformation.updateGenericViewMatrix(lightPosition, eular, lightViewMatrix);
     }
     //根据每层摄像机视野的透视锥计算光的正交投影矩阵
     private void updateLightProjectionMatrix() {

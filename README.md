@@ -124,9 +124,14 @@ https://github.com/lwjglgamedev/lwjglbook
     -修改了Mesh类，使其可以将动画文件传入vbo
     -修改了场景着色器，使其可以根据骨骼位置实时计算顶点位置和其法线
     -修改了shaderProgram使其可以传入着色器所需数据
-    
-page251 - over
-cp19-2 - over
+    page251 - over
+    cp19-2 - over
 
     2018-03-20
 
+从GitHub导入工程后
+    -删除Main.iml
+    -通过project setting(Ctrl+Alt+Shift+S),设置JDK
+    -并通过右键菜单->make director as->
+    -设置java文件夹为source root
+    -设置resource文件夹为resource root

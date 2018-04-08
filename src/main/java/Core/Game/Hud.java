@@ -12,10 +12,10 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static org.lwjgl.glfw.GLFW.glfwGetCursorPos;
 import static org.lwjgl.nanovg.NanoVG.*;
 import static org.lwjgl.nanovg.NanoVGGL3.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
-import static org.lwjgl.glfw.GLFW.glfwGetCursorPos;
 
 public class Hud{
     private static final String FONT_NAME = "BOLD";
@@ -26,6 +26,7 @@ public class Hud{
     private DoubleBuffer posx;
     private DoubleBuffer posy;
     private int counter;//绘制的文本内容
+    private String TextCounter;//绘制的文本内容
 
     public void init(Window window) throws Exception {
         //根据抗锯齿选择创建vg
@@ -83,6 +84,10 @@ public class Hud{
             nvgFillColor(vg, rgba(0x23, 0xa1, 0xf1, 255, colour));
         }
         nvgText(vg, 50, window.getWindowHeight() - 87, String.format("%02d", counter));
+        //绘制文本
+        nvgFontSize(vg,30);
+        nvgFillColor(vg,rgba(0,0,0,255,colour));
+        nvgText(vg,window.getWindowWidth()/2,window.getWindowHeight()-87,TextCounter);
         // 绘制时间
         nvgFontSize(vg, 40.0f);
         nvgFontFace(vg, FONT_NAME);
@@ -114,5 +119,16 @@ public class Hud{
         if (posy != null) {
             MemoryUtil.memFree(posy);
         }
+    }
+
+    public String getTextCounter() {
+        return TextCounter;
+    }
+
+    public void setTextCounter(String textCounter) {
+        TextCounter = textCounter;
+    }
+    public void addTextCounter(String textCounter){
+        TextCounter += textCounter;
     }
 }

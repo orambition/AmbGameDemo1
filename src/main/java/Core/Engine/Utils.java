@@ -1,5 +1,9 @@
 package Core.Engine;
 
+import org.joml.Vector2d;
+import org.joml.Vector2f;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 
 import java.io.BufferedReader;
@@ -65,21 +69,6 @@ public class Utils {
         }
         return result;
     }
-    /*//方向向量旋转 转 欧拉角，有误，尚未确认
-    public static Vector3f VectorsEulerian(Vector3f VectorA,Vector3f VectorB){
-        Vector3f result = new Vector3f(0,0,0);
-        Vector3f normal = VectorA.cross(VectorB);
-        normal.normalize();
-        float fai = (float)(normal.y==0?0:Math.atan(normal.x/normal.y));
-        float xita = (float) Math.acos(normal.dot(0,0,1));
-        float omiga = (float) Math.acos(VectorA.dot(VectorB)/Math.abs(VectorA.length()*VectorB.length()));
-        result.y = (float)Math.toDegrees(2*Math.asin(Math.sin(omiga/2)*Math.sin(xita)));
-        //a+b = 2*Math.atan(Math.tan(omiga/2)*Math.cos(xita));
-        //a-b = 2*fai;
-        result.x = (float)Math.toDegrees(Math.atan(Math.tan(omiga/2)*Math.cos(xita)) + fai);
-        result.z = (float)Math.toDegrees(Math.atan(Math.tan(omiga/2)*Math.cos(xita)) - fai);
-        return result;
-    }*/
     //文件源转ByteBuffer
     public static ByteBuffer ioResourceToByteBuffer(String resource, int bufferSize) throws IOException {
         ByteBuffer buffer;
@@ -118,5 +107,34 @@ public class Utils {
         buffer.flip();
         newBuffer.put(buffer);
         return newBuffer;
+    }
+    //计算从向量o到f的欧拉角
+    public static Vector3f vectorToEuler(Vector3f oDirection, Vector3f fDirection){
+        Vector3f result = new Vector3f();
+        Vector2f tempO = new Vector2f();
+        Vector2f tempF = new Vector2f();
+
+        //旋转x轴2
+        if (!((oDirection.z==0&&oDirection.y==0) || (fDirection.z==0&&fDirection.y==0))){
+            tempO.set(oDirection.z,oDirection.y);
+            tempF.set(fDirection.z,fDirection.y);
+            result.x = -(float) Math.toDegrees(tempO.angle(tempF));
+            oDirection.set(oDirection.x,fDirection.y,fDirection.z);
+        }
+        //旋转y轴1
+        if (!((oDirection.x==0&&oDirection.z==0) || (fDirection.x==0&&fDirection.z==0))){
+            tempO.set(oDirection.x,oDirection.z);
+            tempF.set(fDirection.x,fDirection.z);
+            result.y = (float) Math.toDegrees(tempO.angle(tempF));
+            oDirection.set(fDirection.x,oDirection.y,fDirection.z);
+        }
+        //旋转z轴0
+        if (!((oDirection.x==0&&oDirection.y==0) || (fDirection.x==0&&fDirection.y==0))) {
+            tempO.set(oDirection.x, oDirection.y);
+            tempF.set(fDirection.x, fDirection.y);
+            result.z = -(float) Math.toDegrees(tempO.angle(tempF));
+            oDirection.set(fDirection.x,fDirection.y, oDirection.z);
+        }
+        return result;
     }
 }

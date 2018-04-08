@@ -45,6 +45,7 @@ public class GameDemo1Logic implements IGameLogic {
     private CameraBoxSelectionDetector selectDetector;//选中检测
     //private MouseBoxSelectionDetector selectDetector;//选中检测
     private float lightAngle;//平行光角度、方向
+    private float lightAngle2;//平行光角度、方向
     private final Vector3f cameraInc;//视野移动变量
     private final Vector3f cameraros;//
     private boolean leftButtonPressed;//鼠标左键是否按下
@@ -61,7 +62,8 @@ public class GameDemo1Logic implements IGameLogic {
 
         cameraInc = new Vector3f(0, 0, 0);
         cameraros = new Vector3f(0,0,0);
-        lightAngle = 90;
+        lightAngle = 0;
+        lightAngle2 = 0;
     }
 
     @Override
@@ -167,7 +169,7 @@ public class GameDemo1Logic implements IGameLogic {
         // 平行光
         float lightIntensity = 1f;
         //光的方向与物体不同，该方向是向量值，其它方向是轴的旋转角度
-        Vector3f lightDirection  = new Vector3f(0f, 1f, 1f);
+        Vector3f lightDirection  = new Vector3f(0f, 1f, 0f);
         DirectionalLight directionalLight = new DirectionalLight(new Vector3f(1, 1, 1), lightDirection, lightIntensity);
         //directionalLight.setShadowPosMult(15);不需要了，光的位置和矩阵在shadowca中已经计算了
         //directionalLight.setOrthoCords(-10.0f, 10.0f, -10.0f, 10.0f, -1.0f, 20.0f);
@@ -240,16 +242,17 @@ public class GameDemo1Logic implements IGameLogic {
         }
 
         if (window.isKeyPressed(GLFW_KEY_UP)) {
-            //demoItemZ -= 0.1;
+            lightAngle2+=0.01;
+            soundMgr.playSoundSource(Sounds.BEEP.toString());
         } else if (window.isKeyPressed(GLFW_KEY_DOWN)) {
-            //demoItemZ += 0.1;
+            lightAngle2-=0.01;
             soundMgr.playSoundSource(Sounds.BEEP.toString());
         }
         if (window.isKeyPressed(GLFW_KEY_LEFT)) {
-            //demoItemX -= 0.1;
+            lightAngle-=0.01;
             soundMgr.playSoundSource(Sounds.BEEP.toString());
         } else if (window.isKeyPressed(GLFW_KEY_RIGHT)) {
-            //demoItemX += 0.1;
+            lightAngle+=0.01;
             soundMgr.playSoundSource(Sounds.BEEP.toString());
         }
         if (window.isKeyPressed(GLFW_KEY_ENTER) ) {
@@ -294,7 +297,7 @@ public class GameDemo1Logic implements IGameLogic {
         DirectionalLight directionalLight = sceneLight.getDirectionalLight();
         Vector3f lightDirection = directionalLight.getDirection();
 
-        if (lightAngle > 180) {//落山
+       /* if (lightAngle > 180) {//落山
             directionalLight.setIntensity(0);
             if (lightAngle >= 360) {
                 lightAngle = 0;
@@ -315,22 +318,19 @@ public class GameDemo1Logic implements IGameLogic {
             directionalLight.getColor().x = 1;
             directionalLight.getColor().y = 1;
             directionalLight.getColor().z = 1;
-        }
-        double angRad = Math.toRadians(lightAngle++);
-        lightDirection.x = (float) Math.cos(angRad);
-        lightDirection.y = (float) Math.sin(angRad);
-        //lightDirection.z = 0;
+        }*/
+        lightDirection.x = lightAngle;
+        lightDirection.y = 2;
+        lightDirection.z = lightAngle2;
 
-        lightDirection.normalize();
+        //lightDirection.normalize();
+        Vector3f eular = new Vector3f(Utils.vectorToEuler(new Vector3f(0,0,-1),lightDirection));
         //更新粒子
-        particleEmitter.update((long)(interval*1000));       //hud.setStatusText(String.valueOf(particleEmitter.getParticles().size()));
+        particleEmitter.update((long)(interval*1000));
+        hud.setTextCounter(lightDirection.toString()+eular.toString());
     }
     @Override
     public void render(Window window) {
- /*       if (firstTime) {
-            sceneChanged = true;
-            firstTime = false;
-        }*/
         renderer.render(window,camera,scene,sceneChanged);
         hud.render(window);
     }

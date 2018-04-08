@@ -59,29 +59,4 @@ public class Transformation {
         modelViewMatrix.set(viewMatrix);
         return modelViewMatrix.mul(modelMatrix);*/
     }
-    public Vector3f vectorToOrla(Vector3f oDirection, Vector3f fDirection){
-        Vector3f result = new Vector3f();
-        Vector2f tempO = new Vector2f();
-        Vector2f tempF = new Vector2f();
-        //旋转z轴
-        if (!((oDirection.x==0&&oDirection.y==0) || (fDirection.x==0&&fDirection.y==0))){
-             tempO.set(oDirection.x,oDirection.y);
-             tempF.set(fDirection.x,fDirection.y);
-             result.z = (float) Math.toRadians(Math.acos(tempO.dot(tempF)/(tempF.length()*tempO.length())));
-             oDirection.set(tempF,oDirection.z);
-        }
-        //旋转y轴
-        if (!((oDirection.x==0&&oDirection.z==0) || (fDirection.x==0&&fDirection.z==0))){
-            tempO.set(oDirection.x,oDirection.y);
-            tempF.set(fDirection.x,fDirection.y);
-            result.z = (float) Math.toRadians(Math.acos(tempO.dot(tempF)/(tempF.length()*tempO.length())));
-        }
-        //旋转x轴
-        if (!((oDirection.x==0&&oDirection.y==0) || (fDirection.x==0&&fDirection.y==0))){
-            tempO.set(oDirection.x,oDirection.y);
-            tempF.set(fDirection.x,fDirection.y);
-            result.z = (float) Math.toRadians(Math.acos(tempO.dot(tempF)/(tempF.length()*tempO.length())));
-        }
-        return result;
-    }
 }
